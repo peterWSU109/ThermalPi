@@ -6,11 +6,13 @@ import busio
 import adafruit_mlx90640
 import cv2
 
+count = 0
+
 
 debug = True
 
-h_res = 320 #320,640,1280
-v_res = 240 #240,480,720
+h_res = 640 #320,640,1280
+v_res = 480 #240,480,720
 
 #Example: 0.30 will shrink the thermal projection onto the camera image by 30%
 x_offset_factor = 0.30 
@@ -45,9 +47,6 @@ cap.set(4,v_res)
 cap.set(cv2.CAP_PROP_FPS, 30)
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-guy = cv2.imread('guy.jpg')
-bckgrd = cv2.imread('800x600background.jpg')
-bckgrd2 = cv2.imread('800x600background.jpg')
 
 
 i2c = busio.I2C(board.SCL, board.SDA, frequency=800000)
@@ -59,26 +58,65 @@ face_cascade = cv2.CascadeClassifier('opencv_haarcascade_frontalface_alt.xml')
 
 frame = [0] * 768
 
+def cel_to_far( t ):
+    t = ((t*9)/5)+32
+    return t
+
+def temp_corr ( t , a, farenheight):
+    a = a/d_scale
+    print(a)
+    #per 100 pixel area
+    one_to_two = 0.002025
+    two_to_three = 0.01118
+    three_to_four =0.0208
+    #per 10 pixel area
+    four_to_five = 0.00836
+    
+    
+    
+    
+    if a > 30000:
+        t = t + 0.92
+    if 10000 < a <= 30000:
+        t = t + ((30000 - a)/100)*one_to_two + 0.92
+    if 4500 < a <= 10000:
+        t = t + ((10000 - a)/100)*two_to_three + 1.325
+    if 2000 < a <= 4500:
+        t = t + ((4500 - a)/100)*three_to_four + 1.94
+    if 600 < a <= 2000:
+        t = t + ((600 - a)/10)*four_to_five + 2.46
+    
+    if farenheight == True:
+        t = ((t*9)/5)+32
+    
+    t = int(t*10)
+    t = t/10  
+    string = "Temp " + str(t)
+    
+    return string
+        
+        
+    
+        
+
+
 def thermal_to_image( t_pixel ):
     x, y = t_pixel
     x = (x*tc_horz_scale) + x_offset
     y = (y*tc_vert_scale) + y_offset
     return[x,y]
 
-#if flag is sent as 1 will only return zeros for thermal array values out of range
-def image_to_thermal( i_pixel , flag ):
+
+def image_to_thermal( i_pixel):
     x, y = i_pixel
     x = (x - x_offset)/tc_horz_scale
     y = (y - y_offset)/tc_vert_scale
-    if 0 <= x <= 32 and 0 <= y <=24 and flag == 1:
-        x = 0
-        y = 0
     return [x,y]
 
 def get_temps( top_left , bottom_right):
     temps = []
-    top_left = image_to_thermal(top_left, 0)
-    bottom_right = image_to_thermal(bottom_right, 0)
+    top_left = image_to_thermal(top_left)
+    bottom_right = image_to_thermal(bottom_right)
     x, y = top_left
     a, b = bottom_right
     
@@ -98,26 +136,41 @@ def get_temps( top_left , bottom_right):
             if 0 <= x < 32 and 0 <= y < 24:
                 temps.append(round(frame[x + y*32],1))
             x = x + 1
-    print(len(temps))
     return temps
+
+def get_n_max_temps( top_left , bottom_right, n):
+    temps = get_temps(top_left , bottom_right)
+    leng_temps = len(temps)
+    count = n
+    
+    if n < leng_temps:
+        max_temps = []
+        for i in range(0,leng_temps):
+            if temps[i] > 32 and count > 0:
+                max_temps.append(temps[i])
+                count = count - 1
+        
+        
+        
+        if not max_temps:
+            max_temps.append(0)
+            
+        max_temps.sort()
+        for n in range(n,leng_temps):
+            if temps[n] > max_temps[0] and temps[n] > 32:      
+                max_temps[0] = temps[n]
+                max_temps.sort()
+        
+        max_temps.sort()
+        max_temps.append(leng_temps)
+        return max_temps
+    else:
+        return temps
+            
+        
         
 
-def blend_images( x_point, y_point):
-    x_point = x_point*3
-    y_point = y_point*3
-    y = (y_point - 3)
-    for i in range(228):
-        y = y + 1
-        x = x_point 
-        for j in range(92):
-            a, b, c = guy[i,j]
-            x = x+1
-            
-            m = int(a)
-            l = int(b)
-            k = int(c)
-            if (m + l + k) < 765 and x < 600 and y < 800:
-                bckgrd2[x,y] = guy[i,j]
+
 
         
     
@@ -173,7 +226,7 @@ while True:
                     r[y_offset: y_end, x_offset: x_end] = (255)
                 x_offset = x_offset + tc_horz_scale
     
-    
+    count = count + 1
     
     
     
@@ -183,25 +236,37 @@ while True:
 
     fram = cv2.merge([b,g,r])
     
+    number_of_max_temps = 3
+    total_temps = 0
+    
+
     
     for(a, b, c, d) in faces:
         cv2.rectangle(fram, (a,b), (a+c, b+d), (255,0,0),2)
-        blend_images(a, b)
-        if c*d > 30000*d_scale:
-            fram = cv2.putText(fram, "1 foot", (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
-        if 10000*d_scale < c*d <= 30000*d_scale:
-            fram = cv2.putText(fram, "2 foot", (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
-        if 4500*d_scale < c*d <= 10000*d_scale:
-            fram = cv2.putText(fram, "3 foot", (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
-        if 2000*d_scale < c*d <= 4500*d_scale:
-            fram = cv2.putText(fram, "4 foot", (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
-        if 1100*d_scale < c*d <= 2000*d_scale:
-            fram = cv2.putText(fram, "5 foot", (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
+        temperatures = (get_n_max_temps( (a,b-tc_vert_scale), (a+c, b+0.75*d), number_of_max_temps))
+        print(temperatures)
+        box_area = c*d
+        ti = 0
+        
+        if  len(temperatures) == (number_of_max_temps + 1) and box_area > 600*d_scale:
+            for i in range(0,number_of_max_temps):
+                ti = ti + temperatures[i]
+            
+            ti = ti/number_of_max_temps
+            print(cel_to_far(ti))
+            string = temp_corr( ti, box_area, True)
+            print(string)
+        else:
+            string = "Move Closer"
+        
+        fram = cv2.putText(fram, string, (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
+               
+            
+
     
     
-    
-    cv2.imshow('bckgrd2', bckgrd2)
-    bckgrd2 = cv2.imread('800x600background.jpg')
+    cv2.imshow('fram', fram)
+
     
         
     if cv2.waitKey(1) == ord('q'):
