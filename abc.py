@@ -11,8 +11,8 @@ count = 0
 
 debug = True
 
-h_res = 640 #320,640,1280
-v_res = 480 #240,480,720
+h_res = 640 #320,640,800
+v_res = 480 #240,480,600
 
 #Example: 0.30 will shrink the thermal projection onto the camera image by 30%
 x_offset_factor = 0.30 
@@ -39,6 +39,15 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 color = (0,255,0)
 thickness = 1
 fontScale = 1
+#FONT_HERSHEY_SIMPLEX
+#FONT_HERSHEY_PLAIN
+#FONT_HERSHEY_DUPLEX
+#FONT_HERSHEY_COMPLEX
+#FONT_HERSHEY_TRIPLEX
+#FONT_HERSHEY_COMPLEX_SMALL
+#FONT_HERSHEY_SCRIPT_SIMPLEX
+#FONT_HERSHEY_SCRIPT_COMPLEX
+
 
 #video capture settings
 cap = cv2.VideoCapture(0)
@@ -72,9 +81,6 @@ def temp_corr ( t , a, farenheight):
     #per 10 pixel area
     four_to_five = 0.00836
     
-    
-    
-    
     if a > 30000:
         t = t + 0.92
     if 10000 < a <= 30000:
@@ -87,7 +93,7 @@ def temp_corr ( t , a, farenheight):
         t = t + ((600 - a)/10)*four_to_five + 2.46
     
     if farenheight == True:
-        t = ((t*9)/5)+32
+        t = cel_to_far(t)
     
     t = int(t*10)
     t = t/10  
@@ -168,12 +174,7 @@ def get_n_max_temps( top_left , bottom_right, n):
         return temps
             
         
-        
-
-
-
-        
-    
+           
 
 def refresh_thermalCamera():
     while True:
@@ -226,7 +227,6 @@ while True:
                     r[y_offset: y_end, x_offset: x_end] = (255)
                 x_offset = x_offset + tc_horz_scale
     
-    count = count + 1
     
     
     
@@ -243,7 +243,7 @@ while True:
     
     for(a, b, c, d) in faces:
         cv2.rectangle(fram, (a,b), (a+c, b+d), (255,0,0),2)
-        temperatures = (get_n_max_temps( (a,b-tc_vert_scale), (a+c, b+0.75*d), number_of_max_temps))
+        temperatures = (get_n_max_temps( (a,b-tc_vert_scale), (a+c, b+0.50*d), number_of_max_temps))
         print(temperatures)
         box_area = c*d
         ti = 0
