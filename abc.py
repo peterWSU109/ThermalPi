@@ -11,8 +11,8 @@ count = 0
 
 debug = True
 
-h_res = 320 #320,640,1280
-v_res = 240 #240,480,720
+h_res = 320 #320,640,1024
+v_res = 240 #240,480,768
 
 #Example: 0.30 will shrink the thermal projection onto the camera image by 30%
 x_offset_factor = 0.30 
