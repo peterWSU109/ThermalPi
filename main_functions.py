@@ -269,10 +269,10 @@ def create_thermal_image( r ):
     ly_offset = y_offset - tc_vert_scale
     for h in range(24):
         lx_offset = int(h_res*(x_offset_factor/2))
-        ly_offset = y_offset + tc_vert_scale
-        y_end = y_offset + tc_vert_scale
+        ly_offset = ly_offset + tc_vert_scale
+        y_end = ly_offset + tc_vert_scale
         for w in range(32):
-            x_end = x_offset + tc_horz_scale
+            x_end = lx_offset + tc_horz_scale
             t = frame[h * 32 + w]
             if t < 30:
                 r[ly_offset: y_end, lx_offset: x_end] = (0)
