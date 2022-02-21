@@ -3,6 +3,7 @@ import math
 import board
 import busio
 import adafruit_mlx90640
+import numpy as np
 
 #mlx90640 i2c and camera object definitions from library
 i2c = busio.I2C(board.SCL, board.SDA, frequency=800000)
@@ -11,10 +12,12 @@ mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_4_HZ
 
 
 #delineating temperature between possible face pixel and not face pixel 
-rel_temp = 31
+rel_temp = 0
+ambient = 0
+face_is_present = True
 
 #Touch Screen display is 800x480
-#resolution of screen
+#resolution of image for use by openCV
 h_res = 320 #320,640,1024
 v_res = 240 #240,480,768
 
@@ -41,7 +44,7 @@ tc_vert_scale = int((v_res//24)*(1-y_offset_factor))
 #person object contains all necessary data to keep track of a face and corresponding temperature while
 #face is in FOV of at least the conventional camera
 class person:
-    def __init__(self, x_cor=0, y_cor= 0, lastx = 0, lasty = 0, ttl = 15, frams = 0, t = 0):
+    def __init__(self, x_cor=0, y_cor= 0, lastx = 0, lasty = 0, ttl = 15, frams = 0, t = 0, c = 0):
         self.x = x_cor
         self.y = y_cor
         self.time_to_live = ttl
@@ -52,16 +55,40 @@ class person:
         self.last_x = lastx
         self.last_y = lasty
         self.move_retry = 0
+        self.total_temps = 0
+        self.size = c
+        self.sizes = []
+
 
 
 frame = [0] * 768
 
 def refresh_thermalCamera():
+    global ambient
+    global face_is_present
+    global rel_temp
     while True:
         try:
             mlx.getFrame(frame)
         except ValueError:
             continue
+        if frame and face_is_present == False:
+            mean = np.average(frame)
+            std_dev = np.std(frame)
+            num_temps = 0
+            ambient_temp = 0
+            for i in range(768):
+                if mean - std_dev < frame[i] < std_dev + mean and frame[i] < 27.8:
+                    ambient_temp = ambient_temp + frame[i]
+                    num_temps = num_temps + 1
+            ambient_temp = ambient_temp/num_temps
+            if ambient - 0.5 < ambient_temp < ambient + 0.5 or ambient == 0:
+                ambient = ambient_temp
+                rel_temp = ambient + 7
+                if rel_temp > 31:
+                    rel_temp = 31
+                print(ambient, rel_temp)
+                
 
 
 
@@ -124,6 +151,7 @@ def gather_data( temps):
 
 #calculates the Definitive temperature of a person
 def def_temp_calc( temps ):
+    global ambient
     ratio = 0
     area = 0
     def_temp = 0
@@ -141,7 +169,7 @@ def def_temp_calc( temps ):
                 temp = temp + temps[i][j]
             temp = temp/((len(temps[i]))-2)
             
-            #calculates the correction to the average of the 4 hottest facial pixels based
+            #calculates the correction to the average of the 40 hottest facial pixels based
             #on the number_of_likely_face_pixels found in the facial detection window
             
             #The below ranges and constants are hand calibrated based on testing
@@ -165,6 +193,7 @@ def def_temp_calc( temps ):
             #Stays about the same to from 1.25 to 2.5 feet and then increases alot from
             #2.5 feet to 4.5/5 feet - beyond that - was unable to reliably calculate a core temp
             correction = 1.6 + ((3*temp_x) - 1.25)**3
+            correction = correction + 0.11*(28.0 - ambient)
             
              
             #print("  correction ", correction, " def_temp", temp + correction, "max", max(frame))
@@ -291,7 +320,8 @@ def create_thermal_image( r ):
                         
             lx_offset = lx_offset + tc_horz_scale
     
-
     return r
 
     
+
+
