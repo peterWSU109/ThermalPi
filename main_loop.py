@@ -42,6 +42,50 @@ possible_fever = cv2.imread("assets/Possible fever.jpg")
 move_closer = cv2.imread("assets/Move Closer.jpg")
 no_fever = cv2.imread("assets/Fever Free.jpg")
 too_close = cv2.imread("assets/Too Close.jpg")
+calculating = cv2.imread("assets/Calculating.jpg")import main_functions as mf
+import threading
+import time
+import cv2
+import numpy as np
+
+debug = True
+
+frame_count = 0
+seconds = 0
+
+
+#basic font settings from openCV
+font = cv2.FONT_HERSHEY_SIMPLEX
+color = (0,255,0)
+thickness = 1
+fontScale = 1
+
+#video capture settings
+cap = cv2.VideoCapture(0)
+cap.set(3,mf.h_res)
+cap.set(4,mf.v_res)
+cap.set(cv2.CAP_PROP_FPS, 30)
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+
+
+face_cascade = cv2.CascadeClassifier('opencv_haarcascade_frontalface_alt.xml')
+
+#Possible Fever D(103,50) RGB(255,127,39)
+#Move Closer D(94,19) RGB(0,0,255)
+#Fever Free D(82,14) RGB(0,0,255)
+#Too Close D(72,14) RGB(255,242,0)
+#Possible Forehead Obstruction D(87,52) RGB(163,73,164)
+#Calculating D(101,18) RGB(127,127,127)
+#Face Screen D(87,16) RGB(63,72,204)
+
+img = cv2.imread("assets/800x480background.jpg")
+img2 = cv2.imread("assets/800x480 owl on limb.jpg")
+fever_message = cv2.imread("assets/Fever Message.jpg")
+possible_fever = cv2.imread("assets/Possible Fever.jpg")
+move_closer = cv2.imread("assets/Move Closer.jpg")
+no_fever = cv2.imread("assets/Fever Free.jpg")
+too_close = cv2.imread("assets/Too Close.jpg")
 calculating = cv2.imread("assets/Calculating.jpg")
 possible_forehead_obstruction = cv2.imread("assets/Possible Forehead Obstruction.jpg")
 face_screen = cv2.imread("assets/Face Screen.jpg")
@@ -54,6 +98,7 @@ people = []
 def draw_stick_figure(bckgrd, top_right_corner , scale, thickness):
     #head
     x , y = top_right_corner
+    #modified for banners and rectangle
     x = int(x + 15)
     y = int(y + 15)
     y = y - 115 # funtion will draw stick figure from bottom right corner 
@@ -102,8 +147,6 @@ while True:
     faces = face_cascade.detectMultiScale(gray_p, 1.2, 2)
         
                 
-                
-    
 
 
     if debug == True:
@@ -112,15 +155,16 @@ while True:
         fram = cv2.merge([b,g,r])
     
     
-    #total_temps = 0
     
-    number_of_max_temps = 4
+    number_of_max_temps = 3
     #def__init__(self, x_cor=0, y_cor= 0, lastx = 0, lasty = 0, ttl = 15, frams = 0, temp = 32.5)
     #update the faces list
-    for(a, b, c, d) in faces:
+    
+    for (a, b, c, d) in faces:
         if debug == True:
             cv2.rectangle(fram, (a,b), (a+c, b+d), (255,0,0),2)
-            temperatures = (mf.get_n_max_temps( (a,b-mf.tc_vert_scale), (a+c, b+d+mf.tc_vert_scale), number_of_max_temps))
+        
+        temperatures = (mf.get_n_max_temps( (a,b-mf.tc_vert_scale), (a+c, b+d+mf.tc_vert_scale), number_of_max_temps))
         
         if people:
             new_face = True
@@ -131,13 +175,17 @@ while True:
                     new_face = False
                     #frames is a person attribute that cycles from 1 to 30 -> increments each frame
                     people[i].frames = people[i].frames + 1
+                    people[i].sizes.append(c)
+                    if len(people[i].sizes) > 4:
+                        people[i].sizes.pop(0)
+                        
                     #Every person has 15 frames before they are deleted, UNLESS, they are found and udpated
                     people[i].time_to_live = 15
                     
                     #if a peron is present for 16 frames they will be drawn
                     if people[i].frames > 15 and people[i].alive == False:
                         people[i].alive = True
-                    #temp of -1 = Too close; temp 0 = move closer; temp 1 = calculating; temp 2 possible obstruction
+                    #temp of -1 = Too close; temp 0 = move closer; temp 1 = calculating; temp 2 = possible obstruction; temp 3 = face screen
                     if people[i].frames%3 == 0 and people[i].def_temp < 35:
                         if people[i].move_retry == 0 and (((a/32)/mf.d_scale) * ((b/24)/mf.d_scale)) < 150: 
                             new_def_temp = 0
@@ -150,14 +198,15 @@ while True:
                         #move closer
                         if temperatures[0] != 0 and temperatures[1] > 20:
                             #possible obstruction
-                            if temperatures[1]/temperatures[0] < 0.45 and temperatures[0] > 300:
+                            if temperatures[1]/temperatures[0] <= 0.3 and temperatures[0] > 200:
                                 new_def_temp = 2
                             #calculating
-                            elif temperatures[1]/temperatures[0] > 0.40 and temperatures[0] < 450:
+                            elif temperatures[1]/temperatures[0] > 0.3 and temperatures[0] < 450:
                                 people[i].temps.append(temperatures)
+                                people[i].total_temps = people[i].total_temps + len(people[i].temps) - 2
                                 new_def_temp = 1
                                 people[i].move_retry = 3
-                                if len(people[i].temps) > 10:
+                                if people[i].total_temps > 44:
                                     people[i].temps.pop(0)
                             #too close
                             elif temperatures[0] > 425:
@@ -167,7 +216,7 @@ while True:
                                 new_def_temp = 3
                             
                         #definitive temperature
-                        if len(people[i].temps) == 10:
+                        if people[i].total_temps > 40:
                             new_def_temp = mf.def_temp_calc(people[i].temps)   
                         people[i].def_temp = new_def_temp
                         #reset frame
@@ -175,17 +224,21 @@ while True:
                             people[i].frames = 0
                         
                     #This reduces jitter, Last_x and Last_y will be used to draw the stick figure but are only
-                    #udpated is x, y, of person has changed significantly
+                    #udpated if x, y, of person has changed significantly
                     if not (a -3 < people[i].x < a + 3 and b-3 < people[i].y < b + 3):
                         people[i].last_x = a
                         people[i].last_y = b
                     people[i].x = a
                     people[i].y = b
-                    
+                    if not people[i].size -2 < np.average(people[i].sizes) < people[i].size + 2:
+                            people[i].size = int(np.average(people[i].sizes))
+
             if new_face == True:
-                people.append(mf.person(a,b,a,b,15,1,0))                 
+                people.append(mf.person(a,b,a,b,15,1,0,c))
+                
         else:
-            people.append(mf.person(a,b,a,b,15,1,0))
+            people.append(mf.person(a,b,a,b,15,1,0,c))
+
                 
                 
 
@@ -193,16 +246,14 @@ while True:
     #udpate people list/ deletes person when ttl is 0
     dead_faces = True
     while(dead_faces == True):
-        for i in range(0, len(people)):
+        for i in range(0,len(people)):
             if people[i].time_to_live <= 0:
                 people.pop(i)
                 dead_faces = True
                 break
         dead_faces = False
             
-
-    
-    
+  
     
     #Possible Fever D(103,50) RGB(255,127,39)
     #Move Closer D(94,19) RGB(0,0,255) code == 0
@@ -212,6 +263,7 @@ while True:
     #Calculating D(101,18) RGB(127,127,127) code == 1
     #Face Screen D(87,16) RGB(63,72,204) code == 3
     if people:
+        mf.face_is_present = True
         for i in range(0,len(people)):
             people[i].time_to_live = people[i].time_to_live - 1
             if people[i].alive == True:
@@ -219,6 +271,16 @@ while True:
                 b = people[i].last_y
                 bckgrd_coord = mf.fram_to_background((a,b))
                 x, y = bckgrd_coord
+                #inverts y placment on background image floorspace with room for stick figure
+                y = 580 - y
+                print(people[i].size)
+                #if 40 <= people[i].size <= 130:
+                    #y = int((((people[i].size-40)/100)*270) + 210)
+                #elif people[i].size > 130:
+                    #y = 453
+                #elif people[i].size < 40:
+                    #y = 210
+                bckgrd_coord = x, y
                 bgr = (0,0,0)
                 width = 0
                 height = 0
@@ -254,26 +316,39 @@ while True:
                     height = 14
                     banner = no_fever
                 elif 37.4 < people[i].def_temp:
-                    bgr = (255,127,39)
+                    bgr = (39,127,255)
                     width = 103
                     height = 50
                     banner = possible_fever
+                    
+                    
+                    
                 
-                cv2.rectangle(bkrg, (x+10,y-110), (x+113, y+15), bgr,2)
+                #print(y)
+                scale_factor = (people[i].size-40)/75
+                print("scale_factor", scale_factor)
+                cv2.rectangle(bkrg, (x,y-110), (x+80+int(35*(scale_factor)), y-40+int(35*(scale_factor))), bgr,2)
                 if y - 110 + height < 480 and x + 103 < 800:
-                    bkrg[y-110:y-110+height,x+10:x+width+10] = banner
-                draw_stick_figure(bkrg, bckgrd_coord, 1, 2)
+                    bkrg[y-110-height:y-110,x:x+width] = banner
+                
+                if 40 <= people[i].size:
+                    draw_stick_figure(bkrg, (x,y),(1+scale_factor), 2)
+                elif people[i].size < 40:
+                    draw_stick_figure(bkrg, (x,y),1 , 2)
+                
                 
                 if debug == True:
                     string = "Temp" + str(int(people[i].def_temp*10)/10)
                     fram = cv2.putText(fram, string, (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
-            
+    else:
+        mf.face_is_present = False
 
     
     
     cv2.imshow('bckgrd', bkrg)
     cv2.imshow('fram', fram)
     bkrg = cv2.imread("assets/800x480 owl on limb.jpg")
+
 
     if frame_count == 300000:
          frame_count = 0
@@ -287,3 +362,5 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 exit(0)
+
+
