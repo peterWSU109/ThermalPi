@@ -1,48 +1,4 @@
 import main_functions as mf
-import numpy as np
-import threading
-import time
-import cv2
-
-debug = True
-
-frame_count = 0
-seconds = 0
-
-
-#basic font settings from openCV
-font = cv2.FONT_HERSHEY_SIMPLEX
-color = (0,255,0)
-thickness = 1
-fontScale = 1
-
-#video capture settings
-cap = cv2.VideoCapture(0)
-cap.set(3,mf.h_res)
-cap.set(4,mf.v_res)
-cap.set(cv2.CAP_PROP_FPS, 30)
-cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-
-
-
-face_cascade = cv2.CascadeClassifier('opencv_haarcascade_frontalface_alt.xml')
-
-#Possible Fever D(103,50) RGB(255,127,39)
-#Move Closer D(94,19) RGB(0,0,255)
-#Fever Free D(82,14) RGB(0,0,255)
-#Too Close D(72,14) RGB(255,242,0)
-#Possible Forehead Obstruction D(87,52) RGB(163,73,164)
-#Calculating D(101,18) RGB(127,127,127)
-#Face Screen D(87,16) RGB(63,72,204)
-
-img = cv2.imread("assets/800x480background.jpg")
-img2 = cv2.imread("assets/800x480 owl on limb.jpg")
-fever_message = cv2.imread("assets/Fever Message.jpg")
-possible_fever = cv2.imread("assets/Possible fever.jpg")
-move_closer = cv2.imread("assets/Move Closer.jpg")
-no_fever = cv2.imread("assets/Fever Free.jpg")
-too_close = cv2.imread("assets/Too Close.jpg")
-calculating = cv2.imread("assets/Calculating.jpg")import main_functions as mf
 import threading
 import time
 import cv2
@@ -166,7 +122,9 @@ while True:
         
         temperatures = (mf.get_n_max_temps( (a,b-mf.tc_vert_scale), (a+c, b+d+mf.tc_vert_scale), number_of_max_temps))
         
+        
         if people:
+            mf.max_face_temp = 35
             new_face = True
             for i in range(0,len(people)):
                 #Checks if face Coordinates in updated faces array are close to any other previous face
@@ -185,6 +143,12 @@ while True:
                     #if a peron is present for 16 frames they will be drawn
                     if people[i].frames > 15 and people[i].alive == False:
                         people[i].alive = True
+                    #For the coffee Detector
+                    if len(temperatures) == 2 + number_of_max_temps:
+                        if temperatures[1+number_of_max_temps] > mf.max_face_temp:
+                                    mf.max_face_temp = temperatures[1+number_of_max_temps]
+                                    print("max_face_temp", mf.max_face_temp)    
+                        
                     #temp of -1 = Too close; temp 0 = move closer; temp 1 = calculating; temp 2 = possible obstruction; temp 3 = face screen
                     if people[i].frames%3 == 0 and people[i].def_temp < 35:
                         if people[i].move_retry == 0 and (((a/32)/mf.d_scale) * ((b/24)/mf.d_scale)) < 150: 
@@ -203,6 +167,7 @@ while True:
                             #calculating
                             elif temperatures[1]/temperatures[0] > 0.3 and temperatures[0] < 450:
                                 people[i].temps.append(temperatures)
+                                
                                 people[i].total_temps = people[i].total_temps + len(people[i].temps) - 2
                                 new_def_temp = 1
                                 people[i].move_retry = 3
@@ -239,9 +204,40 @@ while True:
         else:
             people.append(mf.person(a,b,a,b,15,1,0,c))
 
-                
-                
+            
+    #coffee Detection
+    coffee = []
+    if mf.face_is_present == True:
+        for i in range(0,768):
+            if mf.max_face_temp + 2 < mf.frame[i] < 45:
+                coffee.append(mf.thermal_to_image((i%32,(i-i%32)/32)))
+    #print("coffee_temps", coffee)
+    if coffee:
+        real_coffee = []
+        real_coffee.append(coffee[0])
+        a,b = coffee[0]
+        a = int(a)
+        b = int(b)
+        #print("coffee a b", a, b)
+        cv2.rectangle(fram, (a,b), (a+25,b+25), (0,255,0),2)
+        for (x,y) in coffee:
+            new_coffee = True
+            for (a,b) in real_coffee:
+                if a-30 < x < a+30 and b - 20 < y < b + 80:
+                    new_coffee = False
+            if new_coffee == True:
+                real_coffee.append((x,y))
+                x = int(x)
+                y = int(y)
+                #print("coffee a b", a, b)
+                #print("coffee x y", x, y,)
+                cv2.rectangle(fram, (x,y), (x+25,y+25), (0,255,0),2)
 
+                
+        
+            
+        
+        
 
     #udpate people list/ deletes person when ttl is 0
     dead_faces = True
@@ -273,13 +269,7 @@ while True:
                 x, y = bckgrd_coord
                 #inverts y placment on background image floorspace with room for stick figure
                 y = 580 - y
-                print(people[i].size)
-                #if 40 <= people[i].size <= 130:
-                    #y = int((((people[i].size-40)/100)*270) + 210)
-                #elif people[i].size > 130:
-                    #y = 453
-                #elif people[i].size < 40:
-                    #y = 210
+                #print(people[i].size)
                 bckgrd_coord = x, y
                 bgr = (0,0,0)
                 width = 0
@@ -326,7 +316,7 @@ while True:
                 
                 #print(y)
                 scale_factor = (people[i].size-40)/75
-                print("scale_factor", scale_factor)
+                #print("scale_factor", scale_factor)
                 cv2.rectangle(bkrg, (x,y-110), (x+80+int(35*(scale_factor)), y-40+int(35*(scale_factor))), bgr,2)
                 if y - 110 + height < 480 and x + 103 < 800:
                     bkrg[y-110-height:y-110,x:x+width] = banner
