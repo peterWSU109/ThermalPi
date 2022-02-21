@@ -11,10 +11,11 @@ mlx = adafruit_mlx90640.MLX90640(i2c)
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_4_HZ
 
 
-#delineating temperature between possible face pixel and not face pixel 
+#delineating temperature between possible face pixel and not face pixel
+frame_count = 0
 rel_temp = 0
 ambient = 0
-face_is_present = True
+face_is_present = False
 max_face_temp = 34
 
 #Touch Screen display is 800x480
@@ -59,6 +60,9 @@ class person:
         self.total_temps = 0
         self.size = c
         self.sizes = []
+        self.has_coffee = False
+        self.coffee_ttl = 0
+        self.obstruction_count = 3
 
 
 
@@ -73,7 +77,7 @@ def refresh_thermalCamera():
             mlx.getFrame(frame)
         except ValueError:
             continue
-        if frame and face_is_present == False:
+        if frame and face_is_present == False and ambient > 0:
             mean = np.average(frame)
             std_dev = np.std(frame)
             num_temps = 0
@@ -88,7 +92,22 @@ def refresh_thermalCamera():
                 rel_temp = ambient + 7
                 if rel_temp > 31:
                     rel_temp = 31
-                print(ambient, rel_temp)
+                #print(ambient, rel_temp)
+        elif frame and face_is_present == False and ambient == 0 and frame_count > 30:
+            mean = np.average(frame)
+            std_dev = np.std(frame)
+            num_temps = 0
+            ambient_temp = 0
+            if std_dev < 1.5:
+                for i in range(768):
+                    if mean - std_dev < frame[i] < std_dev + mean and frame[i] < 27.8:
+                        ambient_temp = ambient_temp + frame[i]
+                        num_temps = num_temps + 1
+                ambient_temp = ambient_temp/num_temps
+                ambient = ambient_temp
+                rel_temp = ambient + 7
+                if rel_temp > 31:
+                    rel_temp = 31
                 
 
 
@@ -324,5 +343,6 @@ def create_thermal_image( r ):
     return r
 
     
+
 
 
