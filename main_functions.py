@@ -15,6 +15,7 @@ mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_4_HZ
 rel_temp = 0
 ambient = 0
 face_is_present = True
+max_face_temp = 34
 
 #Touch Screen display is 800x480
 #resolution of image for use by openCV
