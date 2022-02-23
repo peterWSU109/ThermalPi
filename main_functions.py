@@ -18,10 +18,27 @@ ambient = 0
 face_is_present = False
 max_face_temp = 34
 
+
 #Touch Screen display is 800x480
 #resolution of image for use by openCV
 h_res = 320 #320,640,1024
 v_res = 240 #240,480,768
+
+
+
+#Distance Calculation contants
+#face areas taken from wikipedia
+#99th percentile men face Breadth 16.5 * Menton to Top of Head 22.5 = 371 cm^2
+#50th percentile women face Breadth 14.4 *Menton to Top of Head 17.7 = 254.88 cm^
+#1st percenttile women forehead sellion to top of head 3.5 * Biocular Breadth 10.8 = 37.8 cm^2
+total_pixels = h_res*v_res
+face_area = 254.88
+forehead = 37.8
+#camera factors: conventional camera FOV = 54x41; thermal camera FOV 55x35
+#pi*[tan(angle1/2)*d]*[tan(angle2/2)*d] = FOV area at some distance
+#or: pi*tan(angle1/2)*tan(angle2/2) * d^2 --> d^2 is the unknown ,the rest is just a constant factor 
+cam_factor = math.pi*math.tan(math.radians(27))*math.tan(math.radians(20.5))
+therm_factor = math.pi*math.tan(math.radians(27.5))*math.tan(math.radians(17.5))
 
 
 #Example: 0.30 will shrink the thermal projection onto the camera image by 30%
@@ -63,7 +80,7 @@ class person:
         self.has_coffee = False
         self.coffee_ttl = 0
         self.obstruction_count = 3
-
+        self.distance = 200
 
 
 frame = [0] * 768
@@ -92,7 +109,7 @@ def refresh_thermalCamera():
                 rel_temp = ambient + 7
                 if rel_temp > 31:
                     rel_temp = 31
-                #print(ambient, rel_temp)
+                print(ambient, rel_temp)
         elif frame and face_is_present == False and ambient == 0 and frame_count > 30:
             mean = np.average(frame)
             std_dev = np.std(frame)
@@ -172,65 +189,61 @@ def gather_data( temps):
 #calculates the Definitive temperature of a person
 def def_temp_calc( temps ):
     global ambient
-    ratio = 0
-    area = 0
-    def_temp = 0
-
-    #temps = [[area_of_facial_detection_rectangle][number_of_likely_face_pixels][hottest_temp1]...[..temp4]
+    average_temp = 0
+    #temps = [[distance][area_of_facial_detection_rectangle][number_of_likely_face_pixels][hottest_temp1]...[..temp n]
     if len(temps) > 0:
+        
         for i in range(0, len(temps)):
             correction = 0
             temp = 0
             temp_x = 0
-
-            #print("area",temps[i][0],"t_pixels", temps[i][1] ,"ratio", temps[i][1]/temps[i][0],end = "")
-            for j in range(2,len(temps[i])):
+            #print("area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1]," ",end = "")
+            for j in range(3,len(temps[i])):
                 #print(" temps ",temps[i][j], end = "")
                 temp = temp + temps[i][j]
-            temp = temp/((len(temps[i]))-2)
+            temp = temp/((len(temps[i]))-3)
+            distance = temps[i][0]
+            #if temps[i][2]/temps[i][1] > .6:
+                #distance = distance - ((temps[i][2]/temps[i][1])-.6)*15
+                
+                
+            #print("average", temp, end = "")
+            if 0 < distance <= 50:
+                correction = 1.7
+            if 50 < distance <= 95:
+               correction = 1.7 + (distance - 50)*0.014
+            elif 95 < distance :
+                correction = (distance - 95)*0.0125 + 2.33
+            #elif distance > 160:
+                #correction = 3.2
+            correction = correction + 0.13*(24 - ambient)
             
-            #calculates the correction to the average of the 40 hottest facial pixels based
-            #on the number_of_likely_face_pixels found in the facial detection window
-            
-            #The below ranges and constants are hand calibrated based on testing
-            
-            #calculates x value to be put into correction function
-            # 1 - sqrt(number_of_likely_face_pixels)/constant
-            if temps[i][1] <= 100:
-                temp_x = 1 - math.sqrt(temps[i][1])/19
-            elif 100 < temps[i][1]<= 160:
-                temp_x = 1 - math.sqrt(temps[i][1])/13.5
-            elif 160 < temps[i][1]<= 225:
-                temp_x = 1 - math.sqrt(temps[i][1])/15.5
-            elif 225 < temps[i][1] <= 275:
-                temp_x = 1 - math.sqrt(temps[i][1])/17
-            elif 275 < temps[i][1] <= 325:
-                temp_x = 1 - math.sqrt(temps[i][1])/19
-            elif 325 < temps[i][1] <= 375:
-                temp_x = 1 - math.sqrt(temps[i][1])/21
-        
-            #its a cubic,the correction changes alot from 0.25 to ~1.25 feet
-            #Stays about the same to from 1.25 to 2.5 feet and then increases alot from
-            #2.5 feet to 4.5/5 feet - beyond that - was unable to reliably calculate a core temp
-            correction = 1.6 + ((3*temp_x) - 1.25)**3
-            correction = correction + 0.11*(28.0 - ambient)
-            
-             
-            #print("  correction ", correction, " def_temp", temp + correction, "max", max(frame))
-            def_temp = def_temp + temp + correction
+            average_temp = average_temp + temp + correction
+            def_temp = average_temp
+            #print(" distance", temps[i][0]) #"correction ", correction, " def_temp", temp + correction)
     else:
         return 32.5
               
     def_temp = def_temp/len(temps)
-    #print("def_temp", def_temp, "\n")
+    #print("ave_temp", def_temp, "\n")
     
     return def_temp
-        
-                                    
+
+#distance calculator
+def distance( c ):
+    #the face area is cm^2, so will return distance in cm
+    ratio = c**2/total_pixels
+    distance = (face_area/ratio)/cam_factor
+    distance = math.sqrt(distance)
     
+    return distance   
     
-            
+def num_max_temps( d ):
+    num_temps = therm_factor*(d**2)
+    num_temps = (forehead/num_temps)*768
     
+    return num_temps  
+
 
 #takes a thermal tuple and returns the corresponding image tuple
 def thermal_to_image( t_pixel ):
@@ -312,6 +325,7 @@ def get_n_max_temps( top_left , bottom_right, n):
         temps.insert(0,num_rel_temps)
         temps.insert(0,leng_temps)
         return temps
+
             
         
 def create_thermal_image( r ):       
@@ -341,6 +355,10 @@ def create_thermal_image( r ):
             lx_offset = lx_offset + tc_horz_scale
     
     return r
+
+
+    
+
 
     
 
