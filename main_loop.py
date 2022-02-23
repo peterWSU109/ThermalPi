@@ -3,8 +3,12 @@ import threading
 import time
 import cv2
 import numpy as np
+import math
+
+
 
 debug = True
+calibration = True
 
 #basic font settings from openCV
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -19,6 +23,7 @@ cap.set(4,mf.v_res)
 cap.set(cv2.CAP_PROP_FPS, 30)
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
+#initiate curses to hide curser
 
 
 face_cascade = cv2.CascadeClassifier('opencv_haarcascade_frontalface_alt.xml')
@@ -43,9 +48,21 @@ possible_forehead_obstruction = cv2.imread("assets/Possible Forehead Obstruction
 face_screen = cv2.imread("assets/Face Screen.jpg")
 obstruction_message = cv2.imread("assets/obstruction message.jpg")
 calibraton = cv2.imread("assets/calibraton.jpg")
+graphic = cv2.imread("assets/graph_800x480.jpg")
+if debug == True:
+    string = "My temp 36.6"
+    temp = 36.6
+    cv2.putText(graphic, string, (100,35), font, fontScale, color, thickness, cv2.LINE_AA, False)
+    cv2.line(graphic, (0,480 - int((temp-30)*50)), (800,480 - int((temp-30)*50)), (0,255,0), thickness)
+    cv2.line(graphic, (0,480 - int((temp-29.5)*50)), (800,480 - int((temp-29.5)*50)), (255,0,255), thickness)
+    cv2.line(graphic, (0,480 - int((temp-30.5)*50)), (800,480 - int((temp-30.5)*50)), (255,0,255), thickness)
+    cv2.imshow('graph', graphic)
 
+#Calibration tool
+values = []
+slopes = []
 
-
+#keeps track of faces
 people = []
 
 
@@ -90,6 +107,9 @@ def draw_coffee_cup(bckgrd, x, y, scale, thickness):
                        [x +int(15*scale), y + int(24*scale)]], np.int32)
     handle.reshape(-1,1,2)
     cv2.polylines(bckgrd, [handle], False, (0,0,0), thickness)
+    
+    
+
 
 #Thermal camera function and thread - works in background continously
 
@@ -128,7 +148,7 @@ while True:
     
     
     
-    number_of_max_temps = 3
+
     #def__init__(self, x_cor=0, y_cor= 0, lastx = 0, lasty = 0, ttl = 15, frams = 0, temp = 32.5)
     #update the faces list
     
@@ -136,8 +156,11 @@ while True:
         if debug == True:
             cv2.rectangle(fram, (a,b), (a+c, b+d), (255,0,0),2)
         
+        distance = mf.distance(c)
+        number_of_max_temps = int(mf.num_max_temps(distance))
+        #print(number_of_max_temps)
         temperatures = (mf.get_n_max_temps( (a,b-mf.tc_vert_scale), (a+c, b+d+mf.tc_vert_scale), number_of_max_temps))
-        
+        temperatures.insert(0,distance)
         
         if people:
             mf.max_face_temp = 35
@@ -149,20 +172,25 @@ while True:
                     new_face = False
                     #frames is a person attribute that cycles from 1 to 30 -> increments each frame
                     people[i].frames = people[i].frames + 1
-                    people[i].sizes.append(c)
+                    people[i].sizes.append(c)  
                     if len(people[i].sizes) > 4:
                         people[i].sizes.pop(0)
                         
+                    people[i].distance = mf.distance(people[i].size)
+                    
+                    #print(number_of_max_temps)
                     #Every person has 15 frames before they are deleted, UNLESS, they are found and udpated
                     people[i].time_to_live = 15
                     
                     #if a peron is present for 16 frames they will be drawn
-                    if people[i].frames > 15 and people[i].alive == False:
+                    if people[i].frames > 10 and people[i].alive == False:
                         people[i].alive = True
+                    #if a face is likely a psuedo face
+                        
                     #For the coffee Detector
-                    if len(temperatures) == 2 + number_of_max_temps:
-                        if temperatures[1+number_of_max_temps] > mf.max_face_temp:
-                                    mf.max_face_temp = temperatures[1+number_of_max_temps]
+                    if len(temperatures) > 2:
+                        if temperatures[-1] > mf.max_face_temp:
+                                    mf.max_face_temp = temperatures[-1]
                                     #print("max_face_temp", mf.max_face_temp)
                     if people[i].coffee_ttl > 0:
                         people[i].coffee_ttl = people[i].coffee_ttl -1
@@ -170,7 +198,7 @@ while True:
                         people[i].has_coffee = False
                         
                     #temp of -1 = Too close; temp 0 = move closer; temp 1 = calculating; temp 2 = possible obstruction; temp 3 = face screen
-                    if people[i].frames%3 == 0 and people[i].def_temp < 35 and people[i].obstruction_count > 0:
+                    if people[i].frames%3 == 0 and people[i].def_temp < 30 and people[i].obstruction_count > 0:
                         if people[i].move_retry == 0 and (((a/32)/mf.d_scale) * ((b/24)/mf.d_scale)) < 150: 
                             new_def_temp = 0
                         elif people[i].move_retry == 0 and (((a/32)/mf.d_scale) * ((b/24)/mf.d_scale)) > 150:
@@ -180,13 +208,13 @@ while True:
                             new_def_temp = 1
                         
                         #move closer
-                        if temperatures[0] != 0 and temperatures[1] > 20:
+                        if temperatures[1] != 0 and temperatures[2] > 10:
                             #possible obstruction
-                            if temperatures[1]/temperatures[0] <= 0.3 and temperatures[0] > 200 and people[i].obstruction_count > 0:
+                            if temperatures[2]/temperatures[1] <= 0.3 and temperatures[1] > 200 and people[i].obstruction_count > 0:
                                 new_def_temp = 2
                                 people[i].obstruction_count = people[i].obstruction_count - 1
                             #calculating
-                            elif temperatures[1]/temperatures[0] > 0.3 and temperatures[0] < 450:
+                            elif temperatures[2]/temperatures[1] > 0.3 and temperatures[0] < 450:
                                 people[i].temps.append(temperatures)
                                 people[i].total_temps = people[i].total_temps + len(people[i].temps) - 2
                                 new_def_temp = 1
@@ -194,7 +222,7 @@ while True:
                                 if people[i].total_temps > 44:
                                     people[i].temps.pop(0)
                             #too close
-                            elif temperatures[0] > 425:
+                            elif temperatures[1] > 500:
                                 new_def_temp = -1
                         #face screen
                             elif not (a -6 < people[i].x < a + 6 and b-6 < people[i].y < b + 6) and new_def_temp == 0:
@@ -294,13 +322,11 @@ while True:
     #Face Screen D(87,16) RGB(63,72,204) code == 3
     if people:
         mf.face_is_present = True
-        if mf.ambient == 0:
-            break
         fever_message_flag = False
         obstruction_message_flag = False
         for i in range(0,len(people)):
             people[i].time_to_live = people[i].time_to_live - 1
-            if people[i].alive == True:
+            if people[i].alive == True and mf.ambient > 0:
                 a = people[i].last_x
                 b = people[i].last_y
                 bckgrd_coord = mf.fram_to_background((a,b))
@@ -350,11 +376,11 @@ while True:
                     width = 103
                     height = 50
                     banner = possible_fever
-                    fever_message_flag == True
+                    fever_message_flag = True
                                
                 
                 #print(y)
-                scale_factor = (people[i].size-40)/75
+                scale_factor = .5 + (people[i].size-40)/75
                 #print("scale_factor", scale_factor)
                 cv2.rectangle(bkrg, (x,y-110), (x+80+int(35*(scale_factor)), y-40+int(35*(scale_factor))), bgr,2)
                 if people[i].has_coffee == True:
@@ -365,26 +391,64 @@ while True:
                 if 40 <= people[i].size:
                     draw_stick_figure(bkrg, (x,y),(1+scale_factor), 2)
                 elif people[i].size < 40:
-                    draw_stick_figure(bkrg, (x,y),1 , 2)  
+                    draw_stick_figure(bkrg, (x,y),1.5 , 2)  
                 
                 if debug == True:
+                    
+                    
                     string = "Temp" + str(int(people[i].def_temp*10)/10)
                     fram = cv2.putText(fram, string, (a, b), font, fontScale, color, thickness, cv2.LINE_AA, False)
+                    
+                if calibration == True:   
+                    if people[i].def_temp > 30:
+                        #print(people[i].def_temp)
+                        x_cor = 25 + int(people[i].distance*3)
+                        y_cor = 480 - int(((people[i].def_temp-30)*50))
+                        cv2.circle(graphic, (x_cor,y_cor), 3, (0,0,255), -1)
+                        cv2.imshow('graph', graphic)
+                        #print(people[i].distance)
+                        #print("def_temp", people[i].def_temp)
+                        print_y1 = 6.3 - ((people[i].def_temp-30))
+                        distance1 = people[i].distance
+                        values.insert(0,(distance1,print_y1))
+                        print(print_y1,"distance", people[i].distance)
+                        if len(values) > 1:
+                            x, y =  values[1]
+                            a, b =  values[0]
+                            if a != x:
+                                slope = (b-y)/(a-x)
+                                if (a - x) > 0 and slope > 0:
+                                    slopes.append(slope)
+                                    print("slope", (b-y)/(a-x), "\n")
+                            
+                        people[i].def_temp = 0
+                        people[i].temps = []
+                        people[i].total_temps = 0
+                        
                     
             if fever_message_flag == True:  
                 bkrg[380:480,0:799] = fever_message      
             elif obstruction_message_flag == True:
                 bkrg[268:480,0:800] = obstruction_message
+                
     else:
         mf.face_is_present = False
 
     
     if mf.ambient == 0:
         bkrg = calibraton
-    cv2.imshow('bckgrd', bkrg)
-    cv2.imshow('fram', fram)
+        
+    if debug == True:
+        cv2.imshow('bckgrd', bkrg)
+        cv2.imshow('fram', fram)
+        bkrg = cv2.imread("assets/800x480 owl on limb.jpg")
+        
+    else:
+        cv2.namedWindow("bckgrd",cv2.WND_PROP_FULLSCREEN)
+        cv2.setWindowProperty("bckgrd", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow('bckgrd', bkrg)
     bkrg = cv2.imread("assets/800x480 owl on limb.jpg")
-    #print(mf.ambient)
+    
 
 
     if mf.frame_count == 300000:
@@ -394,8 +458,9 @@ while True:
     if cv2.waitKey(1) == ord('q'):
                    break
                 
-                
-
+if debug == True:                
+    print("average_slope",np.average(slopes))
 cap.release()
 cv2.destroyAllWindows()
 exit(0)
+
