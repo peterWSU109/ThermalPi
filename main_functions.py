@@ -4,6 +4,7 @@ import board
 import busio
 import adafruit_mlx90640
 import numpy as np
+import threading
 
 #mlx90640 i2c and camera object definitions from library
 i2c = busio.I2C(board.SCL, board.SDA, frequency=800000)
@@ -13,11 +14,12 @@ mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_4_HZ
 
 #delineating temperature between possible face pixel and not face pixel
 frame_count = 0
+message_timer = 0
 rel_temp = 0
 ambient = 0
 face_is_present = False
 max_face_temp = 34
-
+mutex = threading.Lock()
 
 #Touch Screen display is 800x480
 #resolution of image for use by openCV
@@ -26,7 +28,7 @@ v_res = 240 #240,480,768
 
 
 
-#Distance Calculation contants
+#Distance Calculation constants
 #face areas taken from wikipedia
 #99th percentile men face Breadth 16.5 * Menton to Top of Head 22.5 = 371 cm^2
 #50th percentile women face Breadth 14.4 *Menton to Top of Head 17.7 = 254.88 cm^
@@ -91,7 +93,9 @@ def refresh_thermalCamera():
     global rel_temp
     while True:
         try:
+            mutex.acquire()
             mlx.getFrame(frame)
+            mutex.release()
         except ValueError:
             continue
         if frame and face_is_present == False and ambient > 0:
@@ -104,12 +108,13 @@ def refresh_thermalCamera():
                     ambient_temp = ambient_temp + frame[i]
                     num_temps = num_temps + 1
             ambient_temp = ambient_temp/num_temps
-            if ambient - 0.5 < ambient_temp < ambient + 0.5 or ambient == 0:
+            if ambient - 1 < ambient_temp < ambient + 1 or ambient == 0:
                 ambient = ambient_temp
                 rel_temp = ambient + 7
                 if rel_temp > 31:
                     rel_temp = 31
-                print(ambient, rel_temp)
+                #print(ambient, rel_temp)
+                
         elif frame and face_is_present == False and ambient == 0 and frame_count > 30:
             mean = np.average(frame)
             std_dev = np.std(frame)
@@ -189,43 +194,46 @@ def gather_data( temps):
 #calculates the Definitive temperature of a person
 def def_temp_calc( temps ):
     global ambient
+    base_correction = 1.8
     average_temp = 0
-    #temps = [[distance][area_of_facial_detection_rectangle][number_of_likely_face_pixels][hottest_temp1]...[..temp n]
+    slope50to95 = 0.019
+    second_correction = slope50to95*45
+    #temps = [[distance][area_of_facial_detection_rectangle][number_of_likely_face_pixels][hot_temp1]...[..hottest_temp n]
     if len(temps) > 0:
         
         for i in range(0, len(temps)):
             correction = 0
             temp = 0
-            temp_x = 0
-            #print("area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1]," ",end = "")
+
+            print('distance', round(temps[i][0]), "area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1])
             for j in range(3,len(temps[i])):
                 #print(" temps ",temps[i][j], end = "")
                 temp = temp + temps[i][j]
             temp = temp/((len(temps[i]))-3)
             distance = temps[i][0]
             #if temps[i][2]/temps[i][1] > .6:
-                #distance = distance - ((temps[i][2]/temps[i][1])-.6)*15
+            distance = distance + ((temps[i][2]/temps[i][1])-.75)*15
                 
                 
             #print("average", temp, end = "")
             if 0 < distance <= 50:
-                correction = 1.7
+                correction = base_correction
             if 50 < distance <= 95:
-               correction = 1.7 + (distance - 50)*0.014
+               correction = base_correction + (distance - 50)*slope50to95
             elif 95 < distance :
-                correction = (distance - 95)*0.0125 + 2.33
-            #elif distance > 160:
-                #correction = 3.2
-            correction = correction + 0.13*(24 - ambient)
+                correction = (distance - 95)*0.0175 + base_correction + second_correction 
+            correction = correction + 0.13*(25 - ambient)
             
             average_temp = average_temp + temp + correction
             def_temp = average_temp
             #print(" distance", temps[i][0]) #"correction ", correction, " def_temp", temp + correction)
     else:
-        return 32.5
+        return 0
               
     def_temp = def_temp/len(temps)
-    #print("ave_temp", def_temp, "\n")
+    if def_temp < 35.4 and temps[-1][0] < 100:
+        def_temp = 3
+    #print("ave_temp", def_temp, "distance", temps[-1][0],"\n")
     
     return def_temp
 
@@ -302,6 +310,7 @@ def get_n_max_temps( top_left , bottom_right, n):
             if temps[i] > rel_temp and count > 0:
                 max_temps.append(temps[i])
                 count = count - 1
+
         
         if not max_temps:
             max_temps.append(0)
@@ -355,6 +364,9 @@ def create_thermal_image( r ):
             lx_offset = lx_offset + tc_horz_scale
     
     return r
+
+
+    
 
 
     
