@@ -1,0 +1,1 @@
+These are old data files, that just contain a series of test measurements from early on with the thermal camera
