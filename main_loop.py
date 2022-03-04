@@ -232,10 +232,11 @@ while True:
                     people[i].distance = distance
                     
                     #if a peron is present for 10 frames and they have living ratio they will be drawn
+                    #The ratio is the number of 'warm' temps over the number of cold temps in the face rectangle
+                    #the temperature is 3 standard devations from average temp collectd by thermal camera at start up
                     if temperatures and people[i].frames > 10 and people[i].alive == False:
                         if temperatures[1] > 0:
-                            if temperatures[2]/temperatures[1] > 0.4:
-                                print("t_pixels", temperatures[1], "area", temperatures[2], "ratio", temperatures[2]/temperatures[1])
+                            if temperatures[2]/temperatures[1] > 0.4
                                 people[i].alive = True
                     
                         
