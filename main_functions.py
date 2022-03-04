@@ -14,10 +14,11 @@ mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_4_HZ
 
 
 #delineating temperature between possible face pixel and not face pixel
+debug_prompt = False
 frame_count = 0
 fever_message_timer = 0
 obstruction_message_timer = 0
-rel_temp = 32.5
+rel_temp = 30
 ambient = 0
 face_is_present = False
 max_face_temp = 35
@@ -37,8 +38,8 @@ v_res = 240 #240,480,768
 #50th percentile women face Breadth 14.4 *Menton to Top of Head 17.7 = 254.88 cm^
 #1st percenttile women forehead sellion to top of head 3.5 * Biocular Breadth 10.8 = 37.8 cm^2
 total_pixels = h_res*v_res
-face_area = 254.88
-forehead = 37.8*3
+global_face_area = 254.88
+global_forehead = 37.8*4
 #camera factors: conventional camera FOV = 54x41; thermal camera FOV 55x35
 #pi*[tan(angle1/2)*d]*[tan(angle2/2)*d] = FOV area at some distance
 #or: pi*tan(angle1/2)*tan(angle2/2) * d^2 --> d^2 is the unknown ,the rest is just a constant factor 
@@ -47,15 +48,15 @@ therm_factor = math.pi*math.tan(math.radians(27.5))*math.tan(math.radians(17.5))
 
 
 #Example: 0.30 will shrink the thermal projection onto the camera image by 30%
-x_offset_factor = 0.20 
-y_offset_factor = 0.20
+x_offset_factor = 0.30 
+y_offset_factor = 0.30
 tc_horz_scale = int((h_res//32)*(1-x_offset_factor))
 tc_vert_scale = int((v_res//24)*(1-y_offset_factor))
 
 #moves the entire thermal projection on camera image up or down, by an integer number of thermal pixels
 #moving axis without shrinking may cause a segmentation fault
 y_axis = tc_vert_scale*3
-x_axis = tc_horz_scale*0
+x_axis = tc_horz_scale*2
 
 x_offset = int(h_res*(x_offset_factor/2)) - x_axis
 y_offset = int(v_res*(y_offset_factor/2)) - y_axis
@@ -70,28 +71,71 @@ d_scale = h_res*v_res//(320*240)
 #face is in FOV of at least the conventional camera
 class person:
     def __init__(self, x_cor=0, y_cor= 0, lastx = 0, lasty = 0, ttl = 15, frams = 0, t = 0, c = 0, last_therm_x = 0, last_therm_y = 0):
+        
         self.x = x_cor
         self.y = y_cor
+        self.last_x = lastx
+        self.last_y = lasty
         self.last_therm_x = last_therm_x
         self.last_therm_y = last_therm_y
         self.time_to_live = ttl
-        self.temps = []
         self.frames = frams
         self.def_temp = t
-        self.alive = False
-        self.last_x = lastx
-        self.last_y = lasty
-        self.move_retry = 0
-        self.total_temps = 0
         self.size = c
+        self.move_retry = 3
+        
+        self.temps = []
+        self.alive = False
+        self.total_temps = 0
         self.sizes = []
         self.has_coffee = False
         self.coffee_ttl = 0
         self.obstruction_count = 5
-        self.distance = 200
+        self.distance = 0
+        self.forehead = global_forehead
+        self.face_area = global_face_area
         self.w_distance = 0
         self.w_t_pixels = 0
         self.w_area = 0
+        self.standard_dev = 0
+        
+    def new_face_area (self):
+        for i in range(0,len(self.temps)):
+            self.temps[i][0] = distance(self.size,self.face_area)
+            self.temps[i][3] = int(num_max_temps(self.temps[i][0], self.forehead))
+    
+    def temp_array_number_max(self):
+        counter = 0
+        #temps = [[distance][area_of_facial_detection][number_of_likely_face_pixels][max_temps][hot_temp1]...[..hottest_temp n]
+        for i in range(0, len(self.temps)):
+            counter = counter + self.temps[i][3]
+        return counter
+    
+    def temp_array_number(self, temps):
+        self.total_temps = 0
+        #temps = [[distance][area_of_facial_detection][number_of_likely_face_pixels][max_temps][hot_temp1]...[..hottest_temp n]
+        for i in range(0, len(self.temps)):
+            for j in range(4,len(self.temps[i])):
+                self.total_temps = self.total_temps + 1
+        
+    def temp_array_std(self):
+        std_dev = 0
+        temp = []
+        length = 0
+        #temps = [[distance][area_of_facial_detection][number_of_likely_face_pixels][max_temps][hot_temp1]...[..hottest_temp n]
+        for i in range(0, len(self.temps)):
+            if self.temps[i][3] + 4 <= len(self.temps[i]):
+                length = self.temps[i][3] + 4
+            else:
+                length = len(self.temps[i])
+            for j in range(4,length):
+                temp.append(self.temps[i][j])
+        std_dev = np.std(temp)
+        return std_dev
+        
+        
+        
+       
         
 
 
@@ -108,42 +152,38 @@ def refresh_thermalCamera():
     global face_is_present
     global rel_temp
     while True:
-        try:
-            mutex_thermal.acquire()
-            mlx.getFrame(frame)
-            mutex_thermal.release()
-        except ValueError:
-            continue
-        if frame and face_is_present == False and ambient > 0:
+        if debug_prompt == False:
+            try:
+                mutex_thermal.acquire()
+                mlx.getFrame(frame)
+                mutex_thermal.release()
+            except ValueError:
+                continue
+        adj_frame = []
+        if frame and face_is_present == False and ambient > 0 and debug_prompt == False:
             mean = np.average(frame)
             std_dev = np.std(frame)
-            num_temps = 0
-            ambient_temp = 0
             for i in range(768):
-                if mean - std_dev < frame[i] < std_dev + mean and frame[i] < 27.8:
-                    ambient_temp = ambient_temp + frame[i]
-                    num_temps = num_temps + 1
-                if num_temps > 0:
-                    ambient_temp = ambient_temp/num_temps
-            if ambient - 1 < ambient_temp < ambient + 1 or ambient == 0:
-                ambient = ambient_temp
-                #print(ambient, rel_temp)
+                if mean - 2*std_dev < frame[i] < 2*std_dev + mean:
+                    adj_frame.append(frame[i])
+            mean = np.average(adj_frame)
+            std_dev = np.std(adj_frame)
+            if (ambient - 2 < mean < ambient + 2) and std_dev < 2*((rel_temp-mean)/3) or ambient == 0:
+                ambient = mean
+                rel_temp = 3*std_dev + ambient
+                #print(rel_temp, ambient)
                 
-        elif frame and face_is_present == False and ambient == 0 and frame_count > 30:
+        elif frame and face_is_present == False and ambient == 0 and frame_count > 30 and debug_prompt == False:
             mean = np.average(frame)
             std_dev = np.std(frame)
-            num_temps = 0
-            ambient_temp = 0
             for i in range(768):
-                if mean - std_dev < frame[i] < std_dev + mean and frame[i] < 27.8:
-                    ambient_temp = ambient_temp + frame[i]
-                    num_temps = num_temps + 1
-            ambient_temp = ambient_temp/num_temps
-            ambient = ambient_temp
+                if mean - 2*std_dev < frame[i] < 2*std_dev + mean:
+                    adj_frame.append(frame[i])
+            ambient = np.average(adj_frame)
+            rel_temp = 3*(np.std(adj_frame)) + ambient
+            print(rel_temp, ambient)
 
                 
-
-
 
 #Notes on how the picture to background draw works
 #floor of background
@@ -179,49 +219,65 @@ def cel_to_far( t ):
 
 #calculates the Definitive temperature of a person
 def def_temp_calc( temps ):
-    raw_temp = True
+    raw_temp = False
     correction = 0
     def_temp = 0
-    #temps = [[distance][area_of_facial_detection_rectangle][number_of_likely_face_pixels][hot_temp1]...[..hottest_temp n]
+    temp = []
+    temp_length = 0
+    #temps = [[distance][area_of_facial_detection][number_of_likely_face_pixels][std_dev of rel. temps][hot_temp1]...[..hottest_temp n]
     if len(temps) > 0:
         for i in range(0, len(temps)):
             correction = 0
-            temp = 0
-            #print('distance', round(temps[i][0]), "area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1])
-            for j in range(3,len(temps[i])):
-                #print(" temps ",temps[i][j], end = "")
-                temp = temp + temps[i][j]
-            temp = temp/((len(temps[i]))-3)
-            if raw_temp == False:
-                
-                correction = 0.0054*temps[i][0] - 2.5664*(temps[i][2]/temps[i][1]) + 3.1108
-                def_temp = def_temp + temp + correction
-            #print(" distance", temps[i][0]) #"correction ", correction, " def_temp", temp + correction)
+            if temps[i][3] + 4 <= len(temps[i]):
+                temp_length = temps[i][3] + 4
             else:
-                def_temp = def_temp + temp
+                temp_length = len(temps[i])
+            #print('distance', round(temps[i][0]), "area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1])
+            if raw_temp == False:
+                correction = 0.0103*temps[i][0] - 2.1285*(temps[i][2]/temps[i][1]) + 2.5058
+            for j in range(4,temp_length):
+                #print(" temps ",temps[i][j], end = "")
+                temp.append(temps[i][j] + correction)
+            #print(" distance", temps[i][0]) #"correction ", correction, " def_temp", temp + correction)                     
     else:
         return 0
-     
-    def_temp = def_temp/len(temps)
+    def_temp = np.average(temp)
     if def_temp < 35.0 and raw_temp == False:
         if temps[-1][0] < 80:
             def_temp = 3
         else:
             def_temp = 0
     #print("ave_temp", def_temp, "distance", temps[-1][0],"\n")
-    
     return def_temp
 
+
+
+
+
+    
+
+def temperature_std (temps):
+    std_dev = 0
+    temp = []
+    if len(temps) > 4:
+        for i in range(4, temps[i][3] + 4):
+            temp.append(temps[i])
+    return np.std(temp)
+
+
+
 #distance calculator
-def distance( c ):
+def distance( c , face_area):
     #the face area is cm^2, so will return distance in cm
     ratio = c**2/total_pixels
     distance = (face_area/ratio)/cam_factor
     distance = math.sqrt(distance)
     
-    return distance   
+    return distance
+
+
     
-def num_max_temps( d ):
+def num_max_temps( d, forehead ):
     num_temps = therm_factor*(d**2)
     num_temps = (forehead/num_temps)*768
     
@@ -246,6 +302,7 @@ def image_to_thermal( i_pixel):
 #and returns the temperature values from the thermal camera that are inside that windwo
 def get_temps( top_left , bottom_right):
     temps = []
+    
     top_left = image_to_thermal(top_left)
     bottom_right = image_to_thermal(bottom_right)
     x, y = top_left
@@ -260,6 +317,7 @@ def get_temps( top_left , bottom_right):
     rx = int(a - x)
     ry = int(b - y - 1)
     
+    
     for i in range(0,ry):
         y = y + 1
         x = m
@@ -269,6 +327,10 @@ def get_temps( top_left , bottom_right):
             else:
                 temps.append(0)
             x = x + 1
+    
+
+    
+    #print(temps[0])
             
     return temps
 
@@ -278,7 +340,7 @@ def get_n_max_temps( top_left , bottom_right, n):
     temps = get_temps(top_left , bottom_right)
     leng_temps = len(temps)
     num_rel_temps = 0
-    
+    rel_temps = []
 
     count = n
     #leng of temps array less than n - sends array without temperatures
@@ -299,6 +361,7 @@ def get_n_max_temps( top_left , bottom_right, n):
         for i in range(0,leng_temps):
             if temps[i] > rel_temp:
                 num_rel_temps = num_rel_temps + 1
+                rel_temps.append(temps[i])
                 if temps[i] > max_temps[0]:
                     max_temps[0] = temps[i]
                     max_temps.sort()
@@ -309,12 +372,16 @@ def get_n_max_temps( top_left , bottom_right, n):
                 break
         
         max_temps.sort()
-        
-        #number of temps found in facial window in max_temps[0] and number of relavent temps in max_temps[1]
-        max_temps.insert(0,num_rel_temps)
-        max_temps.insert(0,leng_temps)
+        #number of temps found in facial window in max_temps[1] and number of relavent temps in max_temps[2]
+        if max_temps:
+            max_temps.insert(0,n) #3 index
+        else:
+            max_temps.insert(0,0)
+        max_temps.insert(0,num_rel_temps) #2
+        max_temps.insert(0,leng_temps) #1 
         return max_temps
     else:
+        temps.insert(0,0)
         temps.insert(0,num_rel_temps)
         temps.insert(0,leng_temps)
         return temps
@@ -330,13 +397,13 @@ def create_thermal_image( r ):
         for w in range(32):
             x_end = lx_offset + tc_horz_scale
             t = frame[h * 32 + w]
-            if t < 30:
+            if t < rel_temp:
                 r[ly_offset: y_end, lx_offset: x_end] = (0)
-            elif 30 <= t < 31:
-                 r[ly_offset: y_end, lx_offset: x_end] = (0)
+            elif rel_temp <= t < 31:
+                 r[ly_offset: y_end, lx_offset: x_end] = (255)
             elif 31 <= t < 32:
                  r[ly_offset: y_end, lx_offset: x_end] = (255)
-            elif rel_temp <= t < 32.5:
+            elif 32 <= t < 32.5:
                 r[ly_offset: y_end, lx_offset: x_end] = (255)
             elif 32.5 <= t < 34:
                 r[ly_offset: y_end, lx_offset: x_end] = (255)
@@ -355,16 +422,12 @@ def weighted_average( temps ,index ):
     len_of_tuples = 0
     if temps:
         for i in range(0,len(temps)):
-            len_of_tuples = len_of_tuples + len(temps[i]) - 3
+            len_of_tuples = len_of_tuples + len(temps[i]) - 4
         for i in range(0,len(temps)):
-            weighted_average = weighted_average + temps[i][index] * ((len(temps[i]) - 3)/len_of_tuples) 
+            weighted_average = weighted_average + temps[i][index] * ((len(temps[i]) - 4)/len_of_tuples) 
         return round(weighted_average, 2)
     else:
         return -1
-
-
-
-    
 
 
     
