@@ -1,3 +1,4 @@
+#this was the thermalPi project prior to seperating out some of the logic and functions into two seperate files
 
 import threading
 import math
