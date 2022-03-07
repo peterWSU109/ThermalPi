@@ -7,8 +7,6 @@ import math
 from numpy import save
 from sklearn.linear_model import LinearRegression
 
-#from numpy import save
-
 debug = True
 quick_regression = True
 send_to_file = False
@@ -20,7 +18,7 @@ color = (0,255,0)
 thickness = 1
 fontScale = 0.6
 
-#haarcascade algorithmsn openCV uses to detect faces in images
+#haarcascade algorithmn openCV uses to detect faces in images
 face_cascade = cv2.CascadeClassifier('haarcascades/opencv_haarcascade_frontalface_alt.xml')
 face_cascade_2 = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_default.xml')
 
@@ -37,7 +35,7 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 #Fever Free D(82,14) RGB(0,0,255)
 #Too Close D(72,14) RGB(255,242,0)
 #Possible Forehead Obstruction D(87,52) RGB(163,73,164)
-#qCalculating D(101,18) RGB(127,127,127)
+#Calculating D(101,18) RGB(127,127,127)
 #Face Screen D(87,16) RGB(63,72,204)
 
 img = cv2.imread("assets/800x480background.jpg")
