@@ -6,9 +6,8 @@ from sklearn.linear_model import LinearRegression
 
 #returns an array of all path names in a given directory
 
+raw_temp_control = 31.8
 distance_control = True
-
-
 real_temps = []
 calc_temps = []
 dfs = []
@@ -24,17 +23,19 @@ else:
 for i in range(1,len(dfs)):
     dfs[0] = pd.concat([dfs[0], dfs[i]], axis = 0, ignore_index = True)
     
-    
-    
-        
+       
 file = dfs[0]
+file = file[file['def_temps'] > raw_temp_control]
+print(dfd.max())
 
 df0 = file[['distance','ratio','std_dev','ambient']].copy()
 df1 = pd.DataFrame(file["residuals"])
 
 
+
 reg = LinearRegression().fit(df0,df1)
 #Prints results
+print("All raw_temps > ", raw_temp_control)  
 print("r^2 = ", reg.score(df0,df1))
 print("coeffecients", reg.coef_)
 print("y-intercept", reg.intercept_)
@@ -55,5 +56,8 @@ for i in range(0,total_temps):
     if not (- 0.5 < calc_temps[i] - real_temps[i] <  0.5):
         count = count + 1
         
-print("total temps: ", count, "Percentage Out: ", count/total_temps)
+print("Temp statistics: number out of +/-0.5 celcius and percentage Out")
+print("total temps: ", total_temps, "  Total temps OOR: ", count,  "  Percentage Out: ", count/total_temps)
     
+
+
