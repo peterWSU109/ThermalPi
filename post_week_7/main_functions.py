@@ -24,16 +24,18 @@ obstruction_message_timer = 0
 #The default setting is 30 celcius but will be readjusted to 3 standard deviations above the ambient temperature
 #this is used to determine the line between a face and not a face
 rel_temp = 30
+raw_temp_cutoff = 31.8
 ambient = 0
 face_is_present = False
 max_face_temp = 35
 mutex_thermal = threading.Lock()
 
-#Definitive Calculation Betas for adjusting for distance adjustment calculation
-#True temperature = raw temp + distance*distance_beta + ratio_beta*ratio + y_intercept
-distance_beta = 0
-ratio_beta = 0
-y_intercept = 0
+#Definitive Calculation Betas for adjusting for distance calculation
+distance_beta = 0.001274007
+ratio_beta = -2.06933643
+std_dev_beta = 0.19490533
+ambient_beta = -0.39421614
+y_intercept = 12.59229299
 
 
 #Touch Screen display is 800x480
@@ -233,8 +235,7 @@ def cel_to_far( t ):
    
 
 #calculates the Definitive temperature of a person
-def def_temp_calc( temps ):
-    raw_temp = True
+def def_temp_calc( temps, std_dev, raw_temp):
     correction = 0
     def_temp = 0
     temp = []
@@ -249,7 +250,8 @@ def def_temp_calc( temps ):
                 temp_length = len(temps[i])
             #print('distance', round(temps[i][0]), "area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1])
             if raw_temp == False:
-                correction = distance_beta*temps[i][0] + ratio_beta*(temps[i][2]/temps[i][1]) + y_intercept
+                correction = distance_beta*temps[i][0] + ratio_beta*(temps[i][2]/temps[i][1]) + std_dev_beta*std_dev + ambient*ambient_beta + y_intercept
+                print("correction: ", correction)
             for j in range(4,temp_length):
                 #print(" temps ",temps[i][j], end = "")
                 temp.append(temps[i][j] + correction)
@@ -257,7 +259,7 @@ def def_temp_calc( temps ):
     else:
         return 0
     def_temp = np.average(temp)
-    if def_temp < 31.0 and raw_temp == False:
+    if def_temp < 35.0 and raw_temp == False:
         if temps[-1][0] < 80:
             def_temp = 3
         else:
@@ -267,17 +269,21 @@ def def_temp_calc( temps ):
 
 
 
-
-
     
 
 def temperature_std (temps):
-    std_dev = 0
     temp = []
     if len(temps) > 4:
-        for i in range(4, temps[i][3] + 4):
+        for i in range(4, temps[3] + 4):
             temp.append(temps[i])
     return np.std(temp)
+
+def temperature_average (temps):
+    temp = []
+    if len(temps) > 4:
+        for i in range(4, temps[3] + 4):
+            temp.append(temps[i])
+    return np.average(temp)
 
 
 
