@@ -1,0 +1,25 @@
+22.93052383299385 21.678562124545348
+t_pixels 100 area 74 ratio 0.74
+temp  32.7 distance  95.32 area  80.0 t_pixels  66.0 ratio  0.825 standard_dev  0.6719188939150318
+temp  33.1 distance  95.32 area  72.0 t_pixels  54.0 ratio  0.75 standard_dev  0.295127091267474
+temp  33.2 distance  90.78 area  90.0 t_pixels  63.0 ratio  0.7 standard_dev  0.33974303644497905
+t_pixels 110 area 79 ratio 0.7181818181818181
+temp  33.1 distance  95.32 area  72.0 t_pixels  54.0 ratio  0.75 standard_dev  0.295127091267474
+temp  33.3 distance  87.98 area  110.0 t_pixels  80.0 ratio  0.7272727272727273 standard_dev  0.2507973396102024
+temp  33.2 distance  85.36 area  99.0 t_pixels  70.0 ratio  0.7070707070707071 standard_dev  0.3002218114905621
+temp  33.2 distance  85.36 area  99.0 t_pixels  70.0 ratio  0.7070707070707071 standard_dev  0.3002218114905621
+temp  32.8 distance  124.33 area  52.0 t_pixels  34.0 ratio  0.6538461538461539 standard_dev  0.432932506928685
+temp  32.8 distance  124.33 area  52.0 t_pixels  34.0 ratio  0.6538461538461539 standard_dev  0.432932506928685
+t_pixels 90 area 58 ratio 0.6444444444444445
+#bad result
+temp  31.4 distance  95.32 area  72.0 t_pixels  56.0 ratio  0.7777777777777778 standard_dev  0.7372923436466712
+#Change standard dev limit to 0.7
+temp  33.3 distance  85.36 area  110.0 t_pixels  78.0 ratio  0.7090909090909091 standard_dev  0.3640867638319654
+temp  33.1 distance  92.24 area  90.0 t_pixels  68.0 ratio  0.7555555555555555 standard_dev  0.3508254728446799
+temp  33.3 distance  84.1 area  99.0 t_pixels  75.0 ratio  0.7575757575757576 standard_dev  0.4113047503167645
+temp  33.1 distance  84.1 area  100.0 t_pixels  72.0 ratio  0.72 standard_dev  0.3910235392965798
+temp  33.1 distance  84.1 area  99.0 t_pixels  75.0 ratio  0.7575757575757576 standard_dev  0.3373451869345836
+temp  33.1 distance  71.49 area  143.0 t_pixels  95.0 ratio  0.6643356643356644 standard_dev  0.32499929763367397
+r^2 =  0.7146495963774506
+coeffecients [[ 2.96307983e-03 -1.10317171e+00  2.98513719e+00  0.00000000e+00]]
+y-intercept [2.97664537]

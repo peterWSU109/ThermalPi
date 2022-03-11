@@ -1,0 +1,65 @@
+All raw_temps >  0
+r^2 =  0.8714473518687034
+coeffecients [[ 0.01423132 -2.20852072  0.31965306 -0.40576712]]
+y-intercept [12.8274608]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  933   Total temps OOR:  78   Percentage Out:  0.08360128617363344
+
+
+>>> %Run regression_analysis.py
+All raw_temps >  31.7
+r^2 =  0.8693604052494255
+coeffecients [[ 0.01302542 -2.12594265  0.26613072 -0.39568887]]
+y-intercept [12.63293006]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  889   Total temps OOR:  49   Percentage Out:  0.05511811023622047
+
+
+>>> %Run regression_analysis.py
+All raw_temps >  31.8
+r^2 =  0.8734412257088304
+coeffecients [[ 0.01274007 -2.06933643  0.19490533 -0.39421614]]
+y-intercept [12.59229299]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  868   Total temps OOR:  40   Percentage Out:  0.04608294930875576
+>>> 
+
+All raw_temps >  32.5
+r^2 =  0.8743767490189803
+coeffecients [[ 0.01160523 -1.9221403   0.05878047 -0.36501756]]
+y-intercept [11.89522205]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  747   Total temps OOR:  20   Percentage Out:  0.02677376171352075
+
+>>> %Run regression_analysis.py
+All raw_temps >  33
+r^2 =  0.8841678279800071
+coeffecients [[ 0.01072269 -1.91476462  0.09955503 -0.33219292]]
+y-intercept [11.13355696]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  586   Total temps OOR:  6   Percentage Out:  0.010238907849829351
+
+>>> %Run regression_analysis.py
+All raw_temps >  33.5
+r^2 =  0.8820089257652982
+coeffecients [[ 0.01004371 -1.94256967 -0.18989217 -0.33206569]]
+y-intercept [11.24038487]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  393   Total temps OOR:  0   Percentage Out:  0.0
+
+>>> %Run regression_analysis.py
+All raw_temps >  33.3
+r^2 =  0.8707711599977128
+coeffecients [[ 0.01017715 -1.90719916  0.13008595 -0.3225898 ]]
+y-intercept [10.91489558]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  486   Total temps OOR:  4   Percentage Out:  0.00823045267489712
+
+>>> %Run regression_analysis.py
+All raw_temps >  33.4
+r^2 =  0.8843989815565886
+coeffecients [[ 0.00989992 -1.95975308 -0.07429246 -0.32659019]]
+y-intercept [11.11012387]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  436   Total temps OOR:  0   Percentage Out:  0.0
+>>> 
