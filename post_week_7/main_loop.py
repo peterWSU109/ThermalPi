@@ -8,13 +8,18 @@ from numpy import save
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-#from numpy import save
-
+#debug toggles
 debug = True
+#Record raw uncorrected temps
+raw_temp = False
+#Run a quick regression on the data
 quick_regression = True
-send_to_file = True
-distance_control = True
-my_temp = 36.6
+#Save the Calculated Temps/Ratios/Std deviations/Ambient temp/ Distance to a Dataframe File
+send_to_file = False
+#For Debug - ensures each calculated temperature is done from narrow range of distances
+distance_control = False
+#For Debug - Represents the validated control temp for regression analysis
+my_temp = 36.9
 
 #basic font settings from openCV
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -70,7 +75,7 @@ residuals = []
 def_temps = []
 ambient_temp = []
 standard_dev = []
-debug_temp_limit = 100
+debug_temp_limit = 300
 debug_temp_count = debug_temp_limit
 debug_person_count = 0
 debug_color = (0,0,255)
@@ -155,34 +160,37 @@ while True:
     #non faces weeded out by thermal camera
     faces = []
     faces_1 = face_cascade.detectMultiScale(gray_p, 1.2, 2)
-    #faces_2 = face_cascade_2.detectMultiScale(gray_p, 1.2, 2)
+    faces_2 = face_cascade_2.detectMultiScale(gray_p, 1.2, 2)
     for (a,b,c,d) in faces_1:
         faces.append((a,b,c,d))
-    #for (a,b,c,d) in faces_2:
-        #faces.append((a,b,c,d))
+    for (a,b,c,d) in faces_2:
+        faces.append((a,b,c,d))
     
-    #finds duplicate faces/faces that are too close together
+    #finds duplicate faces that are too close together
+    #It keeps all faces from the initial pass of the first algorithm
+    #Then it removes any face in faces_2 that is close at all to any face in faces_1
     if len(faces) > 1:
         faces_length = len(faces)
-        for i in range(0,faces_length-1):
+        for i in range(0,len(faces_1)):
             (a,b,c,d) = faces[i]
-            for j in range(i+1,faces_length):
-                (x,y,z,w) = faces[i+1]
-                if x - 0.25*c < a < x + 0.25*c and y - 0.25*d < b < y + 0.25*d:
-                    faces[i+1] = (0,0,0,0)
-                if x - 18 < a < x + 18 and y - 18 < b < y + 18:
-                    faces[i+1] = (0,0,0,0)
-       
+            for j in range(len(faces_1),faces_length):
+                (x,y,z,w) = faces[j]
+                if x - 0.5*c < a < x + 0.5*c and y - 0.5*d < b < y + 0.5*d:
+                    faces[j] = (0,0,0,0)
+                if x - 40 < a < x + 40 and y - 40 < b < y + 40:
+                    faces[j] = (0,0,0,0)
+  
     #removes duplicate faces
     duplicate_faces = True
     while duplicate_faces == True:
+        duplicate_faces = False
         for i in range(0, len(faces)):
             if faces[i] == (0,0,0,0):
                 faces.pop(i)
+                duplicate_faces = True
                 break
-        duplicate_faces = False
+        
             
-
 
     if len(faces) > 0:
         mf.face_is_present = True      
@@ -240,10 +248,10 @@ while True:
                     people[i].time_to_live = 10
                     people[i].distance = distance
                     
-                    #if a peron is present for 10 frames and they have living ratio they will be drawn
+                    #if a person is present for 10 frames and they have living ratio they will be drawn
                     if temperatures and people[i].frames > 10 and people[i].alive == False:
                         if temperatures[1] > 0:
-                            if temperatures[2]/temperatures[1] > 0.4:
+                            if temperatures[2]/temperatures[1] > 0.3:
                                 print("t_pixels", temperatures[1], "area", temperatures[2], "ratio", temperatures[2]/temperatures[1])
                                 people[i].alive = True
                                 if temperatures[3] > 2:
@@ -279,7 +287,7 @@ while True:
                         if temperatures[1] == -1:
                             people[i].def_temp = -3
                         #needs at least 1 pixel to be considered for calculation and person is in FOV of thermal camera
-                        if temperatures[2] >= 1 and new_def_temp > -2:
+                        if temperatures[2] >= 1 and new_def_temp > -2 and mf.temperature_average(temperatures) > mf.raw_temp_cutoff:
                             #possible obstruction -> less than 50% of face > ambient temp and person is close to camera or calculated temp < 35.0 per calculated def_temp function
                             if (temperatures[2]/temperatures[1] <= 0.5 and people[i].distance < 100 and people[i].obstruction_count > 0) or people[i].def_temp == 3:
                                 new_def_temp = 2
@@ -287,11 +295,15 @@ while True:
                             #calculating - appends new temp array 
                             elif temperatures[2]/temperatures[1] > 0.50 and temperatures[1] <= 500 and len(temperatures) > 4:
                                 if distance_control == True and len(people[i].temps) > 0:
-                                    if people[i].temps[-1][0] == temperatures[0]:
+                                    if temperatures[0] - 5 < people[i].temps[-1][0] < temperatures[0] + 5:
                                         people[i].temps.append(temperatures)
                                         people[i].total_temps = people[i].total_temps + len(temperatures) - 4
                                         new_def_temp = 1
                                         people[i].move_retry = 3
+                                    else:
+                                        people[i].temps = []
+                                        people[i].total_temps = 0
+                                        new_def_temp = -4
                                 else:
                                     people[i].temps.append(temperatures)
                                     people[i].total_temps = people[i].total_temps + len(temperatures) - 4
@@ -303,15 +315,13 @@ while True:
                             new_def_temp = -1
                         #definitive temperature
                         if people[i].total_temps >= 16:
-                            if people[i].standard_dev > 1:
+                            people[i].standard_dev = people[i].temp_array_std()
+                            if people[i].standard_dev > 0.7:
                                 people[i].temps = []
                                 people[i].total_temps = 0
                                 new_def_temp = -4
                             else:
-                                new_def_temp = mf.def_temp_calc(people[i].temps)
-                            people[i].standard_dev = people[i].temp_array_std()
-                            people[i].face_area = mf.global_face_area
-                            people[i].fore_head = mf.global_forehead
+                                new_def_temp = mf.def_temp_calc(people[i].temps, people[i].standard_dev, raw_temp)
                             if debug == True:
                                 people[i].w_distance = mf.weighted_average(people[i].temps, 0)
                                 people[i].w_area = mf.weighted_average(people[i].temps,1 )
@@ -354,7 +364,8 @@ while True:
         a,b = coffee[0]
         a = int(a)
         b = int(b)
-        cv2.rectangle(fram, (a,b), (a+25,b+25), (0,255,0),2)
+        if debug == True:
+            cv2.rectangle(fram, (a,b), (a+25,b+25), (0,255,0),2)
         for (x,y) in coffee:
             new_coffee = True
             for (a,b) in real_coffee:
@@ -365,21 +376,22 @@ while True:
                 real_coffee.append((x,y))
                 x = int(x)
                 y = int(y)
-                cv2.rectangle(fram, (x,y), (x+25,y+25), (0,255,0),2)
+                if debug == True:
+                    cv2.rectangle(fram, (x,y), (x+25,y+25), (0,255,0),2)
     
     #Once coffees are found - finds person with closest right hand corner to coffee,
     # and then switches there "has Coffee" attribute equal to True
     if real_coffee:
-        distance = 0
+        distance = 1000
         person_num = 0
         for (x,y) in real_coffee:
             for j in range(0, len(people)):
                 if people[j].y + people[j].size < y:
                     magnitude = (y - people[j].y + people[j].size)**2 + (people[j].x - x)**2
                     magnitude = magnitude**0.5
-                    distance = magnitude
                     if distance > magnitude:
-                        person_num = j   
+                        person_num = j
+                    distance = magnitude
             people[person_num].has_coffee = True
             people[person_num].coffee_ttl = 10
                 
@@ -391,12 +403,13 @@ while True:
     #udpate people list/ deletes person when ttl is 0
     dead_faces = True
     while(dead_faces == True):
+        dead_faces = False
         for i in range(0,len(people)):
             if people[i].time_to_live <= 0:
                 people.pop(i)
                 dead_faces = True
                 break
-        dead_faces = False
+        
             
     #obstruction message D(800,212)
     #fever message D(799,100)
@@ -585,55 +598,59 @@ if debug == True and quick_regression == True:
     #The residual array is the difference between the manually measured temperature entered by the
     # .. the programmer and the temp measured by the thermal camera
     # The independent values are the raw temperatures and the ratio of warm thermal pixels within the face rectangle
-    x = np.array(values)
-    y = np.array(residuals)
-
+    df = pd.DataFrame(values, columns = ['distance', 'ratio'])
+    df['def_temps'] = def_temps
+    df['std_dev'] = standard_dev
+    df['ambient'] = ambient_temp
+    df['residuals'] = residuals
     
     if send_to_file == True:
         mf.debug_prompt = True
         filename = input("Please enter file name")
         mf.debug_prompt = False
         file_ext = "_d__no.pkl"
-        df = pd.DataFrame(values, columns = ['distance', 'ratio'])
-        df['def_temps'] = def_temps
-        df['std_dev'] = standard_dev
-        df['ambient'] = ambient_temp
-        df['residuals'] = residuals
         if distance_control == True:
             file_ext = "_d_yes.pkl"
         df.to_pickle("data/" + filename + file_ext)
-    
+        
+    df0 = df[['distance','ratio','std_dev','ambient']].copy()
+    df1 = pd.DataFrame(df["residuals"])
     #Runs regression 
-    reg = LinearRegression().fit(x,y)
+    reg = LinearRegression().fit(df0,df1)
     #Prints results
-    print("r^2 = ", reg.score(x,y))
+    print("r^2 = ", reg.score(df0,df1))
     print("coeffecients", reg.coef_)
     print("y-intercept", reg.intercept_)
-    temp_y = reg.coef_[0]
-    ratio_y =  reg.coef_[1]
+    temp_y = reg.coef_[0][0]
+    ratio_y =  reg.coef_[0][1]
+    std_dev_y = reg.coef_[0][2]
+    ambient_y = reg.coef_[0][3]
     y_intercept = reg.intercept_
     
     #rounds results for drawing onto a graph
     temp_y = round(temp_y,4)
     ratio_y = round(ratio_y,4)
-    y_intercept = round(y_intercept,4)
+    std_dev_y = round(std_dev_y,4)
+    ambient_y = round(ambient_y,4)
+    y_intercept = round(y_intercept[0],4)
     
     #Draws String onto graph image with new distance correction equation, raw_temps, corrected temps, and number of samples
-    string = "New_betas = raw_temp + distance*" + str(temp_y) + " + ratio*" + str(ratio_y) + " + " + str(y_intercept)
+    string = "New_betas = raw_temp + distance*" + str(temp_y) + " + ratio*" + str(ratio_y) + " + std_dev*" + str(std_dev_y) + " + ambient*" + str(ambient_y) + " + " + str(y_intercept)
     string2 = "number of samples: " + str(len(values))
-    string3 = "def_temp = raw_temp + distance*" + str(mf.distance_beta) + " + ratio*" + str(mf.ratio_beta) + " + " + str(mf.y_intercept)
+    string3 = "def_temp = raw_temp + distance*" + str(round(mf.distance_beta,2)) + " + ratio*" + str(round(mf.ratio_beta,2)) + " + std_dev*" + str(round(mf.std_dev_beta,2)) + " + " + " ambient*" + str(round(mf.ambient_beta,2)) + " + " + str(round(mf.y_intercept,2))
     string5 = "ambient temp" + str(round(mf.ambient,2))
     for i in range(0,len(values)):
-        y = 480 - int((def_temps[i] + temp_y*values[i][0] + ratio_y*values[i][1] - 30 + y_intercept)*50)
-        if my_temp - y > .5:
-            print("480 - ", def_temps[i], " + ", temp_y, "*",values[i][0], " + ", ratio_y, "*", values[i][1])
+        y = 480 - int((def_temps[i] + temp_y*values[i][0] + ratio_y*values[i][1] + std_dev_y*standard_dev[i] + ambient_y*ambient_temp[i] + y_intercept - 30)*50)
+        if not (-0.5 < my_temp - (((y-480)/(-50))+30) < 0.5):
+            #print("480 - ", def_temps[i], " + ", temp_y, "*",values[i][0], " + ", ratio_y, "*", values[i][1])
+            print("calc: ", ((y-480)/(-50))+30, " acutal: ", my_temp)
         x = 25 + int(values[i][0]*3)
         cv2.circle(graphic, (x,y), 3, (255,0,0), -1)
         
-    cv2.putText(graphic, string, (40,350), font, 0.5, (0,0,0), 1, cv2.LINE_AA, False)
-    cv2.putText(graphic, string2, (40,70), font, 0.5, (0,0,0), 1, cv2.LINE_AA, False)
-    cv2.putText(graphic, string3, (40,50), font, 0.5, (0,0,0), 1, cv2.LINE_AA, False)
-    cv2.putText(graphic, string5, (600,25), font, 0.5, (0,0,0), 1, cv2.LINE_AA, False)
+    cv2.putText(graphic, string, (31,350), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
+    cv2.putText(graphic, string2, (31,70), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
+    cv2.putText(graphic, string3, (31,50), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
+    cv2.putText(graphic, string5, (600,25), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
     cv2.imwrite('graphs/regression_graph.jpg', graphic)
     cv2.imshow('graph', graphic)
     cv2.waitKey(0)
