@@ -1,0 +1,40 @@
+#Though it was speculated this would be the last necessary analysis the model. After testing - the model would just
+fit it self to the training data, which included accurate temps but the model would not identify fevers or artificially
+low temps. The problems was including the Average Raw Temperature value as completely unadjusted training data 
+
+
+All raw_temps >  30.5
+r^2 =  0.9839216161402494
+
+#coeffecients are Distance, Average Raw Temp, Std Deviation, and Ambient Temperature
+#This data is from distance controlled samples
+
+coeffecients [[ 0.00313623 -0.77094255  0.37184704 -0.10576609]]
+y-intercept [30.96827606]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  1334   Total temps OOR:  0   Percentage Out:  0.0
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:              residuals   R-squared:                       0.984
+Model:                            OLS   Adj. R-squared:                  0.984
+Method:                 Least Squares   F-statistic:                 2.033e+04
+Date:                Mon, 14 Mar 2022   Prob (F-statistic):               0.00
+Time:                        08:16:03   Log-Likelihood:                 1163.7
+No. Observations:                1334   AIC:                            -2317.
+Df Residuals:                    1329   BIC:                            -2291.
+Df Model:                           4                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+const         30.9683      0.187    165.309      0.000      30.601      31.336
+distance       0.0031      0.000     20.790      0.000       0.003       0.003
+def_temps     -0.7709      0.007   -110.863      0.000      -0.785      -0.757
+std_dev        0.3718      0.028     13.258      0.000       0.317       0.427
+ambient       -0.1058      0.005    -23.013      0.000      -0.115      -0.097
+==============================================================================
+Omnibus:                      192.055   Durbin-Watson:                   0.224
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):              317.032
+Skew:                           0.945   Prob(JB):                     1.44e-69
+Kurtosis:                       4.459   Cond. No.                     7.03e+03
+==============================================================================
