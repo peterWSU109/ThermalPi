@@ -24,18 +24,18 @@ obstruction_message_timer = 0
 #The default setting is 30 celcius but will be readjusted to 3 standard deviations above the ambient temperature
 #this is used to determine the line between a face and not a face
 rel_temp = 30
-raw_temp_cutoff = 31.8
+raw_temp_cutoff = rel_temp + 2
 ambient = 0
 face_is_present = False
 max_face_temp = 35
 mutex_thermal = threading.Lock()
 
 #Definitive Calculation Betas for adjusting for distance calculation
-distance_beta = 0.001274007
-ratio_beta = -2.06933643
-std_dev_beta = 0.19490533
-ambient_beta = -0.39421614
-y_intercept = 12.59229299
+distance_beta = 0.17455675
+ambient_beta = -0.25133288
+distance_temp_beta = -0.0050152
+ratio_beta = -1.12082826
+y_intercept = 9.06853905
 
 
 #Touch Screen display is 800x480
@@ -51,7 +51,7 @@ v_res = 240 #240,480,768
 #1st percenttile women forehead sellion to top of head 3.5 * Biocular Breadth 10.8 = 37.8 cm^2
 total_pixels = h_res*v_res
 global_face_area = 254.88
-global_forehead = global_face_area/2
+global_forehead = 37.8*3
 #camera factors: conventional camera FOV = 54x41; thermal camera FOV 55x35
 #pi*[tan(angle1/2)*d]*[tan(angle2/2)*d] = FOV area at some distance
 #or: pi*tan(angle1/2)*tan(angle2/2) * d^2 --> d^2 is the unknown ,the rest is just a constant factor 
@@ -110,6 +110,7 @@ class person:
         self.w_t_pixels = 0
         self.w_area = 0
         self.standard_dev = 0
+        self.average_temp = 0
         
     def new_face_area (self):
         for i in range(0,len(self.temps)):
@@ -147,6 +148,20 @@ class person:
         std_dev = np.std(temp)
         return std_dev
         
+    def temp_array_average(self):
+        average = 0
+        temp = []
+        length = 0
+        #temps = [[distance][area_of_facial_detection][number_of_likely_face_pixels][max_temps][hot_temp1]...[..hottest_temp n]
+        for i in range(0, len(self.temps)):
+            if self.temps[i][3] + 4 <= len(self.temps[i]):
+                length = self.temps[i][3] + 4
+            else:
+                length = len(self.temps[i])
+            for j in range(4,length):
+                temp.append(self.temps[i][j])
+        average = np.average(temp)
+        return average
         
         
        
@@ -187,6 +202,7 @@ def refresh_thermalCamera():
             if (ambient - 2 < mean < ambient + 2) and std_dev < 2*((rel_temp-mean)/3) or ambient == 0:
                 ambient = mean
                 rel_temp = 3*std_dev + ambient
+                raw_temp_cutoff = rel_temp + 2
                 #print(rel_temp, ambient)
                 
         #This statement updates the temperature after the initial startup measurement
@@ -198,6 +214,7 @@ def refresh_thermalCamera():
                     adj_frame.append(frame[i])
             ambient = np.average(adj_frame)
             rel_temp = 3*(np.std(adj_frame)) + ambient
+            raw_temp_cutoff = rel_temp + 2
             print(rel_temp, ambient)
 
                 
@@ -235,7 +252,7 @@ def cel_to_far( t ):
    
 
 #calculates the Definitive temperature of a person
-def def_temp_calc( temps, std_dev, raw_temp):
+def def_temp_calc( temps, std_dev, ave_temp, raw_temp):
     correction = 0
     def_temp = 0
     temp = []
@@ -250,20 +267,21 @@ def def_temp_calc( temps, std_dev, raw_temp):
                 temp_length = len(temps[i])
             #print('distance', round(temps[i][0]), "area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1])
             if raw_temp == False:
-                correction = distance_beta*temps[i][0] + ratio_beta*(temps[i][2]/temps[i][1]) + std_dev_beta*std_dev + ambient*ambient_beta + y_intercept
-                print("correction: ", correction)
+                correction = distance_beta*temps[i][0]  +  ratio_beta*temps[i][2]/temps[i][1] +ambient*ambient_beta  + distance_temp_beta*(ave_temp*temps[i][0]) + y_intercept
+                #print("correction: ", correction)
             for j in range(4,temp_length):
-                #print(" temps ",temps[i][j], end = "")
                 temp.append(temps[i][j] + correction)
-            #print(" distance", temps[i][0]) #"correction ", correction, " def_temp", temp + correction)                     
+            #print(" distance", temps[i][0], "correction ", correction, " def_temp", temp + correction)
     else:
         return 0
+
     def_temp = np.average(temp)
     if def_temp < 35.0 and raw_temp == False:
-        if temps[-1][0] < 80:
+        if temps[-1][0] < 100:
             def_temp = 3
         else:
             def_temp = 0
+    print("def_temp")
     #print("ave_temp", def_temp, "distance", temps[-1][0],"\n")
     return def_temp
 
@@ -274,14 +292,14 @@ def def_temp_calc( temps, std_dev, raw_temp):
 def temperature_std (temps):
     temp = []
     if len(temps) > 4:
-        for i in range(4, temps[3] + 4):
+        for i in range(4, len(temps)):
             temp.append(temps[i])
     return np.std(temp)
 
 def temperature_average (temps):
     temp = []
     if len(temps) > 4:
-        for i in range(4, temps[3] + 4):
+        for i in range(4, len(temps)):
             temp.append(temps[i])
     return np.average(temp)
 
