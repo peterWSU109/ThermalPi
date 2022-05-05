@@ -5,37 +5,40 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
 
-#returns an array of all path names in a given directory
 
-raw_temp_control = 30.5
+#cut off raw temp average for submission to model
+raw_temp_control = 25
 distance_control = True
 real_temps = []
 calc_temps = []
 dfs = []
-files = os.listdir("data")
 
+#returns an array of all path names in a given directory
+files = os.listdir("data3")
 
-if distance_control == True:
+#Select if only want to use data with distance control selected
+#from a given file
+if distance_control == False:
     for file in files:
         if file.find("_d_yes") > -1:
-            dfs.append(pd.read_pickle("data/" + file))
+            dfs.append(pd.read_pickle("data3/" + file))
 else:
     for file in files:
-        dfs.append(pd.read_pickle("data/" + file))
+        dfs.append(pd.read_pickle("data3/" + file))
 
+#Puts all the data into one dataframe for analysis
 for i in range(1,len(dfs)):
-    dfs[0] = pd.concat([dfs[0], dfs[i]], axis = 0, ignore_index = True)
-    
-       
+    dfs[0] = pd.concat([dfs[0], dfs[i]], axis = 0, ignore_index = True) 
 file = dfs[0]
 file = file[file['def_temps'] > raw_temp_control]
 
-    
+
+#Selecting my Data 
 df0 = file[['distance','ambient']].copy()
 df0['distance_temp'] = file['distance'] * file['def_temps']
 df0['std_dev_ratio'] = file['ratio']
+df0['distance_sqr'] = 1/file['distance']
 df1 = pd.DataFrame(file["residuals"])
-
 
 
 reg = LinearRegression().fit(df0,df1)
@@ -74,4 +77,5 @@ ols = sm.OLS(df1, df0)
 ols_result = ols.fit()
 print(ols_result.summary())
     
+
 
