@@ -1,0 +1,46 @@
+
+This model was created after deployment at our service learning partner. It was the model
+was producing to high temperature results near the thermal camera. This was corrected
+for by adding 1/distance term to the model. The relevent temperature threshold was adjusted ensure
+was closer to human skin temperature. This new model data is all listed inside
+the folder "/Data3"
+
+
+All raw_temps >  25
+r^2 =  0.9582188044597669
+coeffecients [[ 1.01319756e-01 -2.21381868e-01 -3.09885475e-03 -8.10204780e-01
+  -6.06807916e+01]]
+y-intercept [10.71865082]
+Temp statistics: number out of +/-0.5 celcius and percentage Out
+total temps:  2628   Total temps OOR:  38   Percentage Out:  0.01445966514459665
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:              residuals   R-squared:                       0.958
+Model:                            OLS   Adj. R-squared:                  0.958
+Method:                 Least Squares   F-statistic:                 1.203e+04
+Date:                Thu, 05 May 2022   Prob (F-statistic):               0.00
+Time:                        11:58:28   Log-Likelihood:                 551.97
+No. Observations:                2628   AIC:                            -1092.
+Df Residuals:                    2622   BIC:                            -1057.
+Df Model:                           5                                         
+Covariance Type:            nonrobust                                         
+=================================================================================
+                    coef    std err          t      P>|t|      [0.025      0.975]
+---------------------------------------------------------------------------------
+const            10.7187      0.103    103.972      0.000      10.517      10.921
+distance          0.1013      0.002     48.301      0.000       0.097       0.105
+ambient          -0.2214      0.004    -56.534      0.000      -0.229      -0.214
+distance_temp    -0.0031   6.92e-05    -44.800      0.000      -0.003      -0.003
+std_dev_ratio    -0.8102      0.058    -14.014      0.000      -0.924      -0.697
+distance_sqr    -60.6808      1.491    -40.698      0.000     -63.604     -57.757
+==============================================================================
+Omnibus:                       35.995   Durbin-Watson:                   0.236
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               38.698
+Skew:                           0.255   Prob(JB):                     3.95e-09
+Kurtosis:                       3.305   Cond. No.                     1.25e+06
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 1.25e+06. This might indicate that there are
+strong multicollinearity or other numerical problems.
