@@ -5,37 +5,74 @@ import busio
 import adafruit_mlx90640
 import numpy as np
 import threading
-from scipy.stats import t
+import RPi.GPIO as GPIO
+from gpiozero import CPUTemperature
+import time
 
 
 #mlx90640 i2c and camera object definitions/instantiations from library
-i2c = busio.I2C(board.SCL, board.SDA, frequency=800000)
+i2c = busio.I2C(board.SCL, board.SDA, frequency=1000000)
 mlx = adafruit_mlx90640.MLX90640(i2c)
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_4_HZ
+
+#GPIO setup for turning on backlight and cooling fan
+#23 = screen
+#24 = fan
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(23, GPIO.OUT)
+GPIO.output(23, GPIO.HIGH)
+GPIO.setup(24, GPIO.OUT)
+
 
 
 #Stops the thermal camera thread, while user enters data in main loop
 debug_prompt = False
-#Total frames passed since starting program
+
+#Counter for number of frames for background graphic loop
 frame_count = 0
+
 #Fever message timer
 fever_message_timer = 0
 obstruction_message_timer = 0
+cool_message_timer = 0
+
+#Fan Timer - Once the threshold temperature is met the fan will run for Fan_Timer long and then reassess
+fan_timer_limit = 100
+thermal_limit = 75
+
 #The default setting is 30 celcius but will be readjusted to 3 standard deviations above the ambient temperature
 #this is used to determine the line between a face and not a face
 rel_temp = 30
-raw_temp_cutoff = rel_temp + 2
+cpu0 = CPUTemperature()
+cpu_temp = cpu0.temperature
+
+
+#ambient temperatrue of surfaces measured by thermal camera
 ambient = 0
+
+#This flag is set by the main thread to let the thermal camera thread know when a face is present
+#This ensures the camera will only measure an ambient temperature when a face is not present
+#and the main loop will only shut off if the movement_detected_timer is zero and a person is not present
 face_is_present = False
+person_is_present = False
+
+#The thermal camera thread updates the movement_detected_timer everytime movement is detected
+#As so long as the value is above 0, the main thread will continue to chug along and the screen will stay on
+sleep_timer = 200
+movement_detected_timer = sleep_timer
+display_power = True
+
+#max_face_temp stores the maximum facial temperature pixel value at any given time - this is used in the coffee detector
 max_face_temp = 35
 mutex_thermal = threading.Lock()
 
 #Definitive Calculation Betas for adjusting for distance calculation
-distance_beta = 0.17455675
-ambient_beta = -0.25133288
-distance_temp_beta = -0.0050152
-ratio_beta = -1.12082826
-y_intercept = 9.06853905
+distance_beta = 0.101319756
+ambient_beta = -0.21381868
+distance_temp_beta = -0.00309885475
+ratio_beta = -0.810204780
+one_distance_beta = -60.0680791
+y_intercept = 10.71865082
 
 
 #Touch Screen display is 800x480
@@ -52,6 +89,7 @@ v_res = 240 #240,480,768
 total_pixels = h_res*v_res
 global_face_area = 254.88
 global_forehead = 37.8*3
+
 #camera factors: conventional camera FOV = 54x41; thermal camera FOV 55x35
 #pi*[tan(angle1/2)*d]*[tan(angle2/2)*d] = FOV area at some distance
 #or: pi*tan(angle1/2)*tan(angle2/2) * d^2 --> d^2 is the unknown ,the rest is just a constant factor 
@@ -67,8 +105,9 @@ tc_vert_scale = int((v_res//24)*(1-y_offset_factor))
 
 #moves the entire thermal projection on camera image up or down, by an integer number of thermal pixels
 #moving axis without shrinking may cause a segmentation fault
-y_axis = tc_vert_scale*3
-x_axis = tc_horz_scale*2
+y_axis = tc_vert_scale*-1
+x_axis = tc_horz_scale*-2
+
 
 x_offset = int(h_res*(x_offset_factor/2)) - x_axis
 y_offset = int(v_res*(y_offset_factor/2)) - y_axis
@@ -165,21 +204,24 @@ class person:
         
         
        
-        
 
-
-
+#initializes thermal frame to all zeros
 frame = [0] * 768
-
-
-    
-
     
 #This function runs as a seperate thread in the main loop to update thermal pixel values
 def refresh_thermalCamera():
+    global fan_timer_limit
+    global thermal_limit
+    global raw_temp_cutoff
     global ambient
     global face_is_present
     global rel_temp
+    global movement_detected_timer
+    global display_power
+    global cpu_temp
+    fan_timer = 0
+    #This frame holds the temp values for movement analysis
+    movement_frame = []
     #gets 32x24 frame of thermal pixels from thermal camera camera
     while True:
         if debug_prompt == False:
@@ -189,7 +231,9 @@ def refresh_thermalCamera():
                 mutex_thermal.release()
             except ValueError:
                 continue
+        #This array holds the middle 95% of temperatures
         adj_frame = []
+        
         #This if statement updates the temperature after the intial setup
         if frame and face_is_present == False and ambient > 0 and debug_prompt == False:
             mean = np.average(frame)
@@ -202,10 +246,9 @@ def refresh_thermalCamera():
             if (ambient - 2 < mean < ambient + 2) and std_dev < 2*((rel_temp-mean)/3) or ambient == 0:
                 ambient = mean
                 rel_temp = 3*std_dev + ambient
-                raw_temp_cutoff = rel_temp + 2
                 #print(rel_temp, ambient)
                 
-        #This statement updates the temperature after the initial startup measurement
+        #This statement calculates the inital startup ambient temp
         elif frame and face_is_present == False and ambient == 0 and frame_count > 30 and debug_prompt == False:
             mean = np.average(frame)
             std_dev = np.std(frame)
@@ -213,9 +256,37 @@ def refresh_thermalCamera():
                 if mean - 2*std_dev < frame[i] < 2*std_dev + mean:
                     adj_frame.append(frame[i])
             ambient = np.average(adj_frame)
-            rel_temp = 3*(np.std(adj_frame)) + ambient
+            rel_temp = 3*(np.std(adj_frame)) + ambient + 2
             raw_temp_cutoff = rel_temp + 2
             print(rel_temp, ambient)
+            
+        #Detects movement by looking for changes in thermal pixel values between frames
+        if movement_frame and frame and debug_prompt == False:
+            for i in range(0,96):
+                if not (-3 < frame[i*8] - movement_frame[i] < 3):
+                    movement_detected_timer =  sleep_timer
+                    if display_power == False:
+                        GPIO.output(23, GPIO.HIGH)
+                        display_power = True
+                elif movement_detected_timer == 0:
+                    GPIO.output(23, GPIO.LOW)
+                    display_power = False
+        for i in range(0,96):
+            movement_frame.append(frame[i*8])
+        
+        #Turns on Fan if CPU temp is too high
+        cpu = CPUTemperature()
+        cpu_temp = cpu.temperature
+        if fan_timer == 0:
+            if cpu_temp > thermal_limit:
+                fan_timer = fan_timer_limit
+                GPIO.output(24, GPIO.HIGH)
+            else:
+                GPIO.output(24, GPIO.LOW)
+        else:
+            fan_timer = fan_timer -1
+                
+        
 
                 
 
@@ -267,7 +338,7 @@ def def_temp_calc( temps, std_dev, ave_temp, raw_temp):
                 temp_length = len(temps[i])
             #print('distance', round(temps[i][0]), "area",temps[i][1],"t_pixels", temps[i][2] ,"ratio", temps[i][2]/temps[i][1])
             if raw_temp == False:
-                correction = distance_beta*temps[i][0]  +  ratio_beta*temps[i][2]/temps[i][1] +ambient*ambient_beta  + distance_temp_beta*(ave_temp*temps[i][0]) + y_intercept
+                correction = distance_beta*temps[i][0]  +  ratio_beta*temps[i][2]/temps[i][1] +ambient*ambient_beta + one_distance_beta*(1/temps[i][0]) +distance_temp_beta*(ave_temp*temps[i][0]) + y_intercept
                 #print("correction: ", correction)
             for j in range(4,temp_length):
                 temp.append(temps[i][j] + correction)
@@ -277,11 +348,12 @@ def def_temp_calc( temps, std_dev, ave_temp, raw_temp):
 
     def_temp = np.average(temp)
     if def_temp < 35.0 and raw_temp == False:
+        print(def_temp)
         if temps[-1][0] < 100:
             def_temp = 3
         else:
+            #person is cool, but far away - tells them to move closer
             def_temp = 0
-    print("def_temp")
     #print("ave_temp", def_temp, "distance", temps[-1][0],"\n")
     return def_temp
 
@@ -430,7 +502,7 @@ def get_n_max_temps( top_left , bottom_right, n):
 def create_thermal_image( r ):       
     ly_offset = y_offset - tc_vert_scale
     for h in range(24):
-        lx_offset = int(h_res*(x_offset_factor/2))
+        lx_offset = x_offset
         ly_offset = ly_offset + tc_vert_scale
         y_end = ly_offset + tc_vert_scale
         for w in range(32):
@@ -468,72 +540,4 @@ def weighted_average( temps ,index ):
     else:
         return -1
 
-#This function, thought initially promising, was used to adjust for face size
-#given the standard deviation of the thermal pixels gathered from a facial window
-#it did not produce the results necessary for predictive purposes 
-def adjust_for_face_size( person ):
-    std_dev = person.temp_array_std()
-    person.standard_dev = std_dev
-    adjust_face_retry = 10
-    best_face_area = person.face_area
-    best_forehead = person.forehead
-    factor = 0.1
-    while adjust_face_retry > 0 and not (0.15 <= std_dev <= 0.25) and std_dev != 0:
-        if std_dev > 0.25:
-            #Adjust Face parameters - maker bigger/farther away and use less temps
-            person.face_area = person.face_area*(1+factor)
-            person.forehead = person.forehead*(1-factor)
-            #Get new distance and Max number of temps to check 
-            person.new_face_area()
-            #Get new Standard deviation
-            std_dev = person.temp_array_std()
-            if 16 <= person.temp_array_number_max():
-                adjust_face_retry = adjust_face_retry - 1
-            else:
-                break
-            if 0.25 < std_dev <= person.standard_dev:
-                best_face_area = person.face_area
-                best_forehead = person.forehead
-                person.standard_dev = std_dev
-            elif std_dev > person.standard_dev:
-                factor = factor/2
-        #if too small
-        elif std_dev < 0.15:
-            #Adjust Face parameters - make smaller/closer and get more temps
-            person.face_area = person.face_area*(1-factor)
-            person.forehead = person.forehead*(1+factor)
-             #Get new distance and Max number of temps to check 
-            person.new_face_area()
-            #Get new Standard deviation
-            std_dev = person.temp_array_std()
-            if 16 <= person.temp_array_number_max():
-                adjust_face_retry = adjust_face_retry - 1
-            else:
-                break
-            if person.standard_dev <= std_dev < 0.15:
-                best_face_area = person.face_area
-                best_forehead = person.forehead
-                person.standard_dev = std_dev
-            elif std_dev < person.standard_dev:
-                factor = factor/2
-        #make sure there is at least 16 temps
-    #But keep the best face_area
-    if adjust_face_retry == 0:
-        person.face_area = best_face_area
-        person.forehead = best_forehead 
-        person.new_face_area()
-        #Get new Standard deviation
-    if len(person.temps) > 0: 
-        person.standard_dev = person.temp_array_std()
-    person.temp_array_number()
-    return person
 
-def single_sample_t_test( data, mean, alpha ):
-    critical_value = t.ppf(1 - (alpha), len(data)-1)
-    x_bar = np.average(data)
-    s = np.std(data)
-    t_statistic = (x_bar - mean)/(s/math.sqrt(len(data)))
-    p = 1-(t.cdf(abs(t_statistic), len(data) - 1) *2)
-    stats = (critical_value, t_statistic, p)
-    
-    return stats
