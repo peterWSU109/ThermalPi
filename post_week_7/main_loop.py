@@ -8,18 +8,20 @@ import pandas as pd
 import os
 from sklearn.linear_model import LinearRegression
 
+
 #debug toggles
 debug = True
 #Record raw uncorrected temps
 raw_temp = False
-#Run a quick regression on the data
-quick_regression = True
+#Run a quick regression on the data - otherwise just test the current model - will want to set raw temps to True
+quick_regression = False
 #Save the Calculated Temps/Ratios/Std deviations/Ambient temp/ Distance to a Dataframe File
 send_to_file = False
 #For Debug - ensures each calculated temperature is done from narrow range of distances
 distance_control = False
 #For Debug - Represents the validated control temp for regression analysis
-my_temp = 36.0
+my_temp = 36.6
+
 
 #basic font settings from openCV
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -28,8 +30,8 @@ thickness = 1
 fontScale = 0.6
 
 #haarcascade algorithmn openCV uses to detect faces in images
-face_cascade = cv2.CascadeClassifier('haarcascades/opencv_haarcascade_frontalface_alt.xml')
-face_cascade_2 = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier('/home/pi/Desktop/haarcascades/opencv_haarcascade_frontalface_alt.xml')
+face_cascade_2 = cv2.CascadeClassifier('/home/pi/Desktop/haarcascades/haarcascade_frontalface_default.xml')
 
 
 #video capture settings
@@ -46,35 +48,45 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 #Possible Forehead Obstruction D(87,52) RGB(163,73,164)
 #Calculating D(101,18) RGB(127,127,127)
 #Face Screen D(87,16) RGB(63,72,204)
+
+#How many frames for the background to cycle
 background_cycle_frame = 100
-file_list = os.listdir("assets")
+file_list = os.listdir("/home/pi/Desktop/assets")
 file_list.sort()
+
+#background array and string path
 backgrounds = []
 string_bkrg_path = ""
 
-calibraton = cv2.imread("assets/calibraton.jpg")
-graphic = cv2.imread("assets/graph_800x480.jpg")
+#Loads calibration sceen and Graph
+calibraton = cv2.imread("/home/pi/Desktop/assets/calibraton.jpg")
+graphic = cv2.imread("/home/pi/Desktop/assets/graph_800x480.jpg")
+
 for background in file_list:
     if background.find("room") > -1:
-        backgrounds.append("assets/" + background)
+        backgrounds.append("/home/pi/Desktop/assets/" + background)
 
 string_bckgrd_path = backgrounds[0]
+
 
 #calibration and debug
 if debug == True:
     string = str(my_temp)
     cv2.line(graphic, (0,480 - int((my_temp-30)*50)), (800,480 - int((my_temp-30)*50)), (0,255,0), 1)
     cv2.putText(graphic, string, (25,470 - int((my_temp-30)*50)), font, 0.5, (0,0,0),1, cv2.LINE_AA, False)
-    #cv2.line(graphic, (0,480 - int((my_temp-29.5)*50)), (800,480 - int((my_temp-29.5)*50)), (255,0,255), thickness)
-    #cv2.line(graphic, (0,480 - int((my_temp-30.5)*50)), (800,480 - int((my_temp-30.5)*50)), (255,0,255), thickness)
+    cv2.line(graphic, (0,480 - int((7.2)*50)), (800,480 - int((7.2)*50)), (255,0,255), thickness)
+    cv2.line(graphic, (0,480 - int((5)*50)), (800,480 - int((5)*50)), (255,0,255), thickness)
     cv2.imshow('graph', graphic)
 
+#Arrays that hold all information for ML model
 values = []
 residuals = []
 def_temps = []
 ambient_temp = []
 standard_dev = []
-debug_temp_limit = 400
+
+#Debug regression analysis cycles
+debug_temp_limit = 200
 debug_temp_count = debug_temp_limit
 debug_person_count = 0
 debug_color = (0,0,255)
@@ -126,9 +138,11 @@ def draw_coffee_cup(bckgrd, x, y, scale, thickness):
     handle.reshape(-1,1,2)
     cv2.polylines(bckgrd, [handle], False, (0,0,0), thickness)
     
+
 # Messages
-obstruction_message = "Obstruction error - Could be caused by clothing articles covering face(such as hat), or prespiration covering forehead. Or, one could be too cool to measure. This can happen if walking inside from a cold enviroment. If this occurs please allow face to warm indoors and try again in few minutes."
-fever_message = "Though a fever has been detected, contactless thermometers can occassionally report false positives. It is recommended this fever is confirmed with a retail home method such an oral or tymapanic thermometer"
+obstruction_message = "Obstruction error - Could be caused by clothing articles covering face(such as hat), or prespiration covering forehead."
+too_cool_message = "Too Cool - This can happen if walking inside from a cold enviroment. If this occurs please allow face to warm indoors and try again in few minutes."
+fever_message = "Though a fever has been detected, contactless thermometers can occassionally report false positives. It is recommended this fever is confirmed with a retail home method such an oral or tympanic thermometer"
 #57 horizontal characters - x 5 lines at 0.8 font_size (285 characters) is about the max
 def display_message(bckgrd, string, color, text_color, font_size, timer):
     strings = []
@@ -145,11 +159,11 @@ def display_message(bckgrd, string, color, text_color, font_size, timer):
         string = string[str_ind:]
         str_len = str_len - str_ind
         str_ind = 57
-    cv2.rectangle(bckgrd, (8,468 - (len(strings) - 1)*40),(788,470),color,-1)
-    cv2.rectangle(bckgrd, (6,468 - (len(strings) - 1)*40),(790,472),(0,0,0),2)
+    cv2.rectangle(bckgrd, (8,455 - (len(strings) - 1)*45),(788,470),color,-1)
+    cv2.rectangle(bckgrd, (6,455 - (len(strings) - 1)*45),(790,472),(0,0,0),2)
     for i in range(0, len(strings)):
-        cv2.putText(bckgrd, strings[i], (18,492 - (len(strings) - 1)*40 + i*30), font, 0.8, text_color,2, cv2.LINE_AA, False)
-    cv2.putText(bckgrd, str(1 + int(timer/20)), (750,450), font, 0.8, text_color,2, cv2.LINE_AA, False)   
+        cv2.putText(bckgrd, strings[i], (18,470 - (len(strings) - 1)*40 + i*28), font, 0.8, text_color,2, cv2.LINE_AA, False)
+    cv2.putText(bckgrd, str(1 + int(timer/10)), (750,445), font, 0.8, text_color,2, cv2.LINE_AA, False)   
 
 
 #Thermal camera function and thread - works in background continously
@@ -162,65 +176,70 @@ t_camera.start()
 
 while True:
     
-    #changes background image - needs work
-    if mf.frame_count < len(backgrounds)*background_cycle_frame:
-        if mf.frame_count%background_cycle_frame == 0:
-            string_bckgrd_path = backgrounds[int(mf.frame_count/background_cycle_frame)]
-    else:
-        mf.frame_count = -1
-
-    #obtains image from raspberry pi camera, flips image related to physical hardware restraints
-    #creates a grayscale image for the haarcascade face finder algorithmn and then uses
-    #a histogrophic equalizer to improve image contrast for facial detection
-    ret, fram = cap.read()
-    fram = cv2.flip(fram, 180)
-    gray_p = cv2.cvtColor(fram, cv2.COLOR_BGR2GRAY)
-    gray_p = cv2.equalizeHist(gray_p)
-    
-    #runs two facial algorithmns to find faces
-    #non faces weeded out by thermal camera
     faces = []
-    faces_1 = face_cascade.detectMultiScale(gray_p, 1.2, 2)
-    faces_2 = face_cascade_2.detectMultiScale(gray_p, 1.2, 2)
-    for (a,b,c,d) in faces_1:
-        faces.append((a,b,c,d))
-    for (a,b,c,d) in faces_2:
-        faces.append((a,b,c,d))
-    
-    #finds duplicate faces that are too close together
-    #It keeps all faces from the initial pass of the first algorithm
-    #Then it removes any face in faces_2 that is close at all to any face in faces_1
-    if len(faces) > 1:
-        faces_length = len(faces)
-        for i in range(0,len(faces_1)):
-            (a,b,c,d) = faces[i]
-            for j in range(len(faces_1),faces_length):
-                (x,y,z,w) = faces[j]
-                if x - 0.5*c < a < x + 0.5*c and y - 0.5*d < b < y + 0.5*d:
-                    faces[j] = (0,0,0,0)
-                if x - 40 < a < x + 40 and y - 40 < b < y + 40:
-                    faces[j] = (0,0,0,0)
-  
-    #removes duplicate faces
-    duplicate_faces = True
-    while duplicate_faces == True:
-        duplicate_faces = False
-        for i in range(0, len(faces)):
-            if faces[i] == (0,0,0,0):
-                faces.pop(i)
-                duplicate_faces = True
-                break
+    #Will only search for faces if the thermal camera has recently detected movement
+    #This counter is decremented with each loop, but reset everytime there is movement
+    if mf.movement_detected_timer > 0:
+        #changes background image 
+        if mf.frame_count < len(backgrounds)*background_cycle_frame:
+            if mf.frame_count%background_cycle_frame == 0:
+                string_bckgrd_path = backgrounds[int(mf.frame_count/background_cycle_frame)]
+        else:
+            mf.frame_count = -1
+
+        #obtains image from raspberry pi camera, flips image related to physical hardware restraints
+        #creates a grayscale image for the haarcascade face finder algorithmn and then uses
+        #a histogrophic equalizer to improve image contrast for facial detection
+        ret, fram = cap.read()
+        fram = cv2.flip(fram, 180)
+        gray_p = cv2.cvtColor(fram, cv2.COLOR_BGR2GRAY)
+        gray_p = cv2.equalizeHist(gray_p)
         
+        #runs two facial algorithmns to find faces
+        #non faces weeded out by thermal camera
+        
+        faces_1 = face_cascade.detectMultiScale(gray_p, 1.2, 2)
+        faces_2 = face_cascade_2.detectMultiScale(gray_p, 1.2, 2)
+        for (a,b,c,d) in faces_1:
+            faces.append((a,b,c,d))
+        for (a,b,c,d) in faces_2:
+            faces.append((a,b,c,d))
+        
+        #finds duplicate faces that are too close together
+        #It keeps all faces from the initial pass of the first algorithm
+        #Then it removes any face in faces_2 that is close at all to any face in faces_1
+        if len(faces) > 1:
+            faces_length = len(faces)
+            for i in range(0,len(faces_1)):
+                (a,b,c,d) = faces[i]
+                for j in range(len(faces_1),faces_length):
+                    (x,y,z,w) = faces[j]
+                    if x - 0.5*c < a < x + 0.5*c and y - 0.5*d < b < y + 0.5*d:
+                        faces[j] = (0,0,0,0)
+                    if x - 40 < a < x + 40 and y - 40 < b < y + 40:
+                        faces[j] = (0,0,0,0)
+      
+        #removes duplicate faces
+        duplicate_faces = True
+        while duplicate_faces == True:
+            duplicate_faces = False
+            for i in range(0, len(faces)):
+                if faces[i] == (0,0,0,0):
+                    faces.pop(i)
+                    duplicate_faces = True
+                    break
             
 
     if len(faces) > 0:
-        mf.face_is_present = True      
+        mf.face_is_present = True
                 
     #creates a window to display thermal image over real image
     if debug == True:
         b, g, r = cv2.split(fram)
         r = mf.create_thermal_image( r )
         fram = cv2.merge([b,g,r])
+        #displays sleep timer in upper left
+        mf.fram = cv2.putText(fram, str(mf.movement_detected_timer), (0,30), font, 1.5, (0,125,0), 1, cv2.LINE_AA, False) 
         
     
     
@@ -236,7 +255,7 @@ while True:
         number_of_max_temps = int(mf.num_max_temps(distance, mf.global_forehead))
         #print(number_of_max_temps)
         if mf.frame:
-            temperatures = (mf.get_n_max_temps( (a,b), (a+c, b+d+mf.tc_vert_scale), number_of_max_temps))
+            temperatures = (mf.get_n_max_temps( (a,b), (a+c, b+d), number_of_max_temps))
             temperatures.insert(0,distance)
         else:
             temperatures = []
@@ -288,7 +307,7 @@ while True:
                         people[i].has_coffee = False
                         
                        
-                    #temp -2 = face screen; temp of -1 = Too close; temp 0 = move closer; temp 1 = calculating; temp 2 and temp 3 = possible obstruction or calculated temp < 35.0
+                    #temp -2 = face screen; temp of -1 = Too close; temp 0 = move closer; temp 1 = calculating; temp 2 == possible obstruction; and temp 3 = calculated temp < 35.0
                     #temp -3 = outside of thermal camera FOV, temp -4 "Stand STILL' - when standard dev of raw temps is too high (>1)
                     if temperatures and people[i].frames%3 == 0 and people[i].def_temp < 35.0 and people[i].obstruction_count > 0:
     
@@ -309,10 +328,11 @@ while True:
                             people[i].def_temp = -3
                         #needs at least 1 pixel to be considered for calculation and person is in FOV of thermal camera
                         if temperatures[2] >= 1 and new_def_temp > -2:
-                            #possible obstruction -> less than 50% of face > ambient temp and person is close to camera or calculated temp < 35.0 per calculated def_temp function
-                            if (temperatures[2]/temperatures[1] <= 0.5 and people[i].distance < 100 and people[i].obstruction_count > 0) or people[i].def_temp == 3 or mf.temperature_average(temperatures) < mf.raw_temp_cutoff:
-                                new_def_temp = 2
+                            #possible obstruction -> less than 50% of face > relevent temp and person is close to camera or calculated temp < 35.0 per calculated def_temp function
+                            if (temperatures[2]/temperatures[1] <= 0.5 and people[i].distance < 100 and people[i].obstruction_count > 0) or people[i].def_temp == 3:
                                 people[i].obstruction_count = people[i].obstruction_count - 1
+                                if new_def_temp != 3:
+                                    new_def_temp = 2
                             #calculating - appends new temp array 
                             elif temperatures[2]/temperatures[1] > 0.50 and temperatures[1] <= 500 and len(temperatures) > 4:
                                 #provides distance control
@@ -370,6 +390,13 @@ while True:
                 
         else:
             people.append(mf.person(a,b,a,b,15,1,1,c,a,b))
+            
+    #update mf.person_is_present
+    mf.person_is_present = False
+    for i in range(0, len(people)):
+        if people[i].alive == True:
+            mf.person_is_present = True
+    
     
     
     #coffee detector code
@@ -377,7 +404,7 @@ while True:
     #any other than the hottest face
     
     coffee = []
-    if mf.face_is_present == True:
+    if mf.person_is_present == True:
         for i in range(0,768):
             if mf.max_face_temp + 2 < mf.frame[i] < 45:
                 coffee.append(mf.thermal_to_image((i%32,(i-i%32)/32)))
@@ -432,8 +459,7 @@ while True:
                 people.pop(i)
                 dead_faces = True
                 break
-        
-            
+           
     #obstruction message D(800,212)
     #fever message D(799,100)
     #This loop iterates through the people array and draws them on the background
@@ -454,16 +480,19 @@ while True:
                 bgr = (0,0,0)
                 #This sets the banner message above the stick figures head
                 if people[i].def_temp == -4:
+                    #Standard Deviation of Temps to High
                     color = (255,255,255)
                     bgr = (255,0,0)
                     fontScale = 0.7
                     string = "Too much movement"
                 elif people[i].def_temp == -3:
+                    #Person is outside the thermal FOV but in Camera FOV
                     color = (0,0,0)
                     bgr = (0,242,255)
                     fontScale = 0.7
                     string = "Move to Center"
                 elif people[i].def_temp == -2:
+                    #Motion between frames greater than one thermal pixel length
                     color = (255,255,255)
                     bgr = (255,0,0)
                     string = "Face Screen"
@@ -479,23 +508,33 @@ while True:
                     color = (255,255,255)
                     bgr = (127,127,127)
                     string = "Calculating"
-                elif people[i].def_temp == 2 or people[i].def_temp == 3:
+                elif people[i].def_temp == 2:
                     color = (255,255,255)
                     bgr = (164,73,163)
                     fontScale = 0.7
                     string = "Possible obstruction"
                     if people[i].obstruction_count == 0:
-                        mf.obstruction_message_timer = 210
+                        mf.obstruction_message_timer = 80
+                elif people[i].def_temp == 3:
+                    #calculated temp is less than 35.0
+                    color = (0,0,0)
+                    bgr = (234,217,153)
+                    fontScale = 0.7
+                    string = "Face is too Cool"
+                    if people[i].obstruction_count == 0:
+                        mf.cool_message_timer = 80
                 elif mf.rel_temp < people[i].def_temp < 37.3:
-                    color = (255,255,255)
+                    color = (0,0,0)
                     bgr = (0,255,0)
                     string = "Fever Free"
-                elif 37.2 < people[i].def_temp:
+                    cv2.rectangle(bkrg, (0,0), (380,60), (0,255,0),-1)
+                    bkrg = cv2.putText(bkrg, "Fever Free!", (0,50), font, 2, (0,0,0), 2, cv2.LINE_AA, False)
+                elif 37.3 <= people[i].def_temp:
                     color = (0,0,0)
                     bgr = (39,127,255)
                     fontScale = 0.7
                     string = "Possible Fever"
-                    mf.fever_message_timer = 210
+                    mf.fever_message_timer = 80
                                
                 
                 #Sets scale and length for text above stick figure's head
@@ -503,11 +542,11 @@ while True:
                 length = len(string)*14 
                 
                 #Draws the box around stick figure and text and scales them appropriately based on distance
-                string2 = str(people[i].def_temp)
+                #string2 = str(people[i].def_temp)
                 cv2.rectangle(bkrg, (x,y-110), (x+80+int(35*(scale_factor)), y-40+int(35*(scale_factor))), bgr,2)
                 cv2.rectangle(bkrg, (x,y-130), (x+length, y-107), bgr,-1)
-                bkrg = cv2.putText(bkrg, string, (x,y-110), font, fontScale, (255,255,255), thickness, cv2.LINE_AA, False)
-                bkrg = cv2.putText(bkrg, string2, (0,30), font, 1.5, (0,0,0), 1, cv2.LINE_AA, False)
+                bkrg = cv2.putText(bkrg, string, (x,y-110), font, fontScale, color, thickness, cv2.LINE_AA, False)
+                #bkrg = cv2.putText(bkrg, string2, (0,30), font, 1.5, (0,0,0), 1, cv2.LINE_AA, False)
                 
                 #Draws the animations for stick and coffee
                 if people[i].has_coffee == True:
@@ -519,12 +558,12 @@ while True:
                     
 
                 if debug == True:
-                    #draws box and temps onto thermal overlay window
+                    #draws box and temps onto thermal overlay window = 'fram'
                     string = "Temp" + str(int(people[i].def_temp*10)/10)
-                    mf.fram = cv2.putText(fram, string, (a, b), font, fontScale, debug_color, thickness, cv2.LINE_AA, False)
+                    mf.fram = cv2.putText(fram, string, (a, b), font, fontScale, (0,242,255), thickness, cv2.LINE_AA, False)
                     
                     
-                    if people[i].def_temp > 30 and debug_temp_count > 0:
+                    if people[i].def_temp > 25 and debug_temp_count > 0:
                         x_cor = 25 + int(people[i].w_distance*3)
                         y_cor = 480 - int(((people[i].def_temp-30)*50))
                         cv2.circle(graphic, (x_cor,y_cor), 3, debug_color, -1)
@@ -547,12 +586,11 @@ while True:
                         people[i].temps = []
                         people[i].total_temps = 0
         
-                        #if quick regression is true the following code will collect tempatures in sets and occassionally ask for new temperatures
+                        #if debug is true the following code will collect tempatures in sets and occassionally ask for new temperatures
                         #if a new participate would like to be included in the data set
                         #The loop can can be ended by pressing Q
-                        if quick_regression == True:
-                            debug_temp_count = debug_temp_count - 1
-                    elif people[i].def_temp > 30 and quick_regression == True:
+                        debug_temp_count = debug_temp_count - 1
+                    elif people[i].def_temp > 25 and debug_temp_count < 1:
                         mf.debug_prompt = True
                         user_input = input("Please enter celcius temperature\n")
                         mf.debug_prompt = False
@@ -582,20 +620,30 @@ while True:
     if mf.fever_message_timer > 0:
         mf.fever_message_timer = mf.fever_message_timer - 1
         display_message(bkrg, fever_message, (14,201,255), (0,0,0), 0.8, mf.fever_message_timer)
-             
+        #This Banner stays on and covers any fever free message
+        cv2.rectangle(bkrg, (0,0), (460,60), (14,201,255),-1)
+        bkrg = cv2.putText(bkrg, "Possible Fever", (0,50), font, 2, (0,0,0), 2, cv2.LINE_AA, False)
+            
     elif mf.obstruction_message_timer > 0:
         mf.obstruction_message_timer = mf.obstruction_message_timer - 1
         display_message(bkrg, obstruction_message, (164,73,163), (255,255,255), 0.8, mf.obstruction_message_timer)
+    
+    elif mf.cool_message_timer > 0:
+        mf.cool_message_timer = mf.cool_message_timer - 1
+        display_message(bkrg, too_cool_message, (234,217,153), (0,0,0), 0.8, mf.cool_message_timer)
 
     #if ambient is zero, the calibation background will be displayed
     if mf.ambient == 0:
         bkrg = calibraton
+        if mf.face_is_present == True:
+            bkrg = cv2.putText(bkrg, "Possible Face Detected", (0,50), font, 2, (0,0,0), 3, cv2.LINE_AA, False)
+            
     
     #if debug is on the data graph, the normal background display and thermal over real camera will display in
     # all in separate windows 
     if debug == True:
         cv2.imshow('bckgrd', bkrg)
-        bkrg = cv2.imread("assets/800x480 owl on limb.jpg")  
+        bkrg = cv2.imread("/home/pi/Desktop/assets/800x480 owl on limb.jpg")  
         cv2.imshow('fram', fram)
     #In normal mode the main background display will appear in full screen mode
     else:
@@ -608,12 +656,17 @@ while True:
      
     #increment the global frame count
     mf.frame_count = mf.frame_count + 1
+    #decrements movement detected timer if greater than 0
+    if mf.movement_detected_timer > 0 and mf.person_is_present == False:
+        mf.movement_detected_timer = mf.movement_detected_timer - 1
     #Will terminate main loop when the letter q is pressed
     if cv2.waitKey(1) == ord('q'):
         break
 
 
-if debug == True and quick_regression == True:
+if debug == True:
+    total_test_temps = len(def_temps)
+    wrong_temps = 0
     #The residual array is the difference between the manually measured temperature entered by the
     # .. the programmer and the temp measured by the thermal camera
     # The independent values are the raw temperatures and the ratio of warm thermal pixels within the face rectangle
@@ -623,6 +676,7 @@ if debug == True and quick_regression == True:
     df['ambient'] = ambient_temp
     df['residuals'] = residuals
     
+    #Will send data to file if desired
     if send_to_file == True:
         mf.debug_prompt = True
         filename = input("Please enter file name")
@@ -630,49 +684,87 @@ if debug == True and quick_regression == True:
         file_ext = "_d__no.pkl"
         if distance_control == True:
             file_ext = "_d_yes.pkl"
-        df.to_pickle("data/" + filename + file_ext)
+        df.to_pickle("data3/" + filename + file_ext)
+    
+    #This if statement will run regression analysis on the collected data from one session
+    #Otherwise will simply run a quick test on the collected temperatures
+    if quick_regression == True:
+            
+        df0 = df[['distance','ambient']].copy()
+        df0['distance_temp'] = df['distance'] * df['def_temps']
+        df0['ratio'] = df['ratio']
+        df0['one_distance'] = 1/df['distance']
+        df1 = pd.DataFrame(df["residuals"])
+        #Runs regression 
+        reg = LinearRegression().fit(df0,df1)
+        #Prints results
+        print("r^2 = ", reg.score(df0,df1))
+        print("coeffecients", reg.coef_)
+        print("y-intercept", reg.intercept_)
+        distance_y = reg.coef_[0][0]
+        ambient_y = reg.coef_[0][1]
+        distance_temp_y =  reg.coef_[0][2]
+        ratio_y = reg.coef_[0][3]
+        one_distance_y = reg.coef_[0][4]
+        y_intercept = reg.intercept_[0]
         
-    df0 = df[['distance','ambient','ratio']].copy()
-    df0['distance_temp'] = df['distance'] * df['def_temps']
-    df1 = pd.DataFrame(df["residuals"])
-    #Runs regression 
-    reg = LinearRegression().fit(df0,df1)
-    #Prints results
-    print("r^2 = ", reg.score(df0,df1))
-    print("coeffecients", reg.coef_)
-    print("y-intercept", reg.intercept_)
-    distance_y = reg.coef_[0][0]
-    ambient_y = reg.coef_[0][1]
-    ratio_y = reg.coef_[0][2]
-    distance_temp_y =  reg.coef_[0][3]
-    y_intercept = reg.intercept_
     
-    #rounds results for drawing onto a graph
-    distance_y = round(distance_y,4)
-    distance_temp_y = round(distance_temp_y,4)
-    ambient_y = round(ambient_y,4)
-    ratio_y = round(ratio_y,4)
-    y_intercept = round(y_intercept[0],4)
+        #rounds results for drawing onto a graph
+        distance_y = round(distance_y,4)
+        distance_temp_y = round(distance_temp_y,4)
+        ambient_y = round(ambient_y,4)
+        ratio_y = round(ratio_y,4)
+        one_distance_y = round(one_distance_y,4)
+        y_intercept = round(y_intercept,4)
     
-    #Draws String onto graph image with new distance correction equation, raw_temps, corrected temps, and number of samples
-    string = "New_betas = raw_temp + distance*" + str(distance_y) + " + raw_temp*" + str(distance_temp_y) + " + ratio*"+ str(ratio_y) +" + ambient*" + str(ambient_y) + " + " + str(y_intercept)
+        #Draws String onto graph image with new distance correction equation, raw_temps, corrected temps, and number of samples
+        string = "new_betas = rawT + D*" + str(distance_y) + " + 1/D*" + str(one_distance_y) + " + rawT*D*" + str(distance_temp_y) + " + ratio*"+ str(ratio_y) +" + ambient*" + str(ambient_y) + " + " + str(y_intercept)
+        cv2.putText(graphic, string, (31,90), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
+        
+        #Calculates how many temps fell OOR and prints the individual results to the console
+        for i in range(0,len(values)):
+            y = 480 - int((def_temps[i] + distance_y*values[i][0] + one_distance_y*(1/values[i][0]) + distance_temp_y*(def_temps[i]*values[i][0]) + ratio_y*values[i][1] + ambient_y*ambient_temp[i] + y_intercept - 30)*50)
+            if not (-0.5 < my_temp - (((y-480)/(-50))+30) < 0.5):
+                #print("480 - ", def_temps[i], " + ", temp_y, "*",values[i][0], " + ", ratio_y, "*", values[i][1])
+                print("calc: ", ((y-480)/(-50))+30, " actual: ", my_temp)
+                wrong_temps = wrong_temps + 1
+            x = 25 + int(values[i][0]*3)
+            cv2.circle(graphic, (x,y), 3, (255,0,0), -1)
+    
+    else:
+        distance_y = mf.distance_beta 
+        ambient_y = mf.ambient_beta 
+        distance_temp_y = mf.distance_temp_beta 
+        ratio_y = mf.ratio_beta 
+        y_intercept = mf.y_intercept
+        
+        #Gives quick OOR data after debug mode raps up - only if collecting corrected temps
+        if raw_temp == False:
+            for i in range(0,len(def_temps)):
+                if not (-0.5 < my_temp - def_temps[i] < 0.5):
+                    print("calc: ", def_temps[i], " actual: ", my_temp)
+                    wrong_temps = wrong_temps + 1
+    
+    
+    
+    #Writes all Test data as text on the graph
     string2 = "number of samples: " + str(len(values))
-    string3 = "def_temp = raw_temp + distance*" + str(round(mf.distance_beta,4)) + " + raw_temp*" + str(round(mf.distance_temp_beta,4))  + " + ratio*"+ str(ratio_y) + " + " + " ambient*" + str(round(mf.ambient_beta,4)) + " + " + str(round(mf.y_intercept,4))
+    string3 = "def_temp = rawT + D*" + str(round(mf.distance_beta,4)) + "1/D*"+ str(round(mf.one_distance_beta)) +" + rawT*D*" + str(round(mf.distance_temp_beta,4))  + " + ratio*"+ str(ratio_y) + " + " + " ambient*" + str(round(mf.ambient_beta,4)) + " + " + str(round(mf.y_intercept,4))
+    string4 = "Out of Range: " + str(wrong_temps)
+    string6 = "Percentage OOR: " + str(wrong_temps/total_test_temps)
     string5 = "ambient temp" + str(round(mf.ambient,2))
-    for i in range(0,len(values)):
-        y = 480 - int((def_temps[i] + distance_y*values[i][0] + distance_temp_y*(def_temps[i]*values[i][0]) + ratio_y*values[i][1] + ambient_y*ambient_temp[i] + y_intercept - 30)*50)
-        if not (-0.5 < my_temp - (((y-480)/(-50))+30) < 0.5):
-            #print("480 - ", def_temps[i], " + ", temp_y, "*",values[i][0], " + ", ratio_y, "*", values[i][1])
-            print("calc: ", ((y-480)/(-50))+30, " acutal: ", my_temp)
-        x = 25 + int(values[i][0]*3)
-        cv2.circle(graphic, (x,y), 3, (255,0,0), -1)
-        
-    cv2.putText(graphic, string, (31,350), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
-    cv2.putText(graphic, string2, (31,70), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
+    cv2.putText(graphic, string2, (31,255), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
     cv2.putText(graphic, string3, (31,50), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
+    cv2.putText(graphic, string4, (31,270), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
+    cv2.putText(graphic, string6, (31,295), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
     cv2.putText(graphic, string5, (600,25), font, 0.35, (0,0,0), 1, cv2.LINE_AA, False)
-    cv2.imwrite('graphs/regression_graph.jpg', graphic)
+    #Saves the graph to desktop
+    cv2.imwrite('/home/pi/Desktop/graphs/regression_graph.jpg', graphic)
     cv2.imshow('graph', graphic)
+    
+    #Prints the OOR statistics to the console
+    print("Temp statistics: number out of +/-0.5 celcius and percentage Out")
+    print("total temps: ", total_test_temps, "  Total temps OOR: ", wrong_temps,  "  Percentage Out: ", wrong_temps/total_test_temps)
     
     #Stops Thermal Camera Thread and allows programmer to look at graph
     mf.debug_prompt = True
