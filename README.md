@@ -4,6 +4,8 @@ The Thermal Pi project repository contains the code, schematics and 3D model doc
 
 ![image](https://user-images.githubusercontent.com/99409502/183681615-91228a1e-6a97-4f3c-8c00-d679fa8c1665.png)
 ![image](https://user-images.githubusercontent.com/99409502/183681972-60288032-311e-4323-a0b5-ae1a2fa4eb10.png)
+![image](https://user-images.githubusercontent.com/99409502/183682458-b8451d3c-55b2-4d2e-822c-af865bdd11c3.png)
+
 
 
 ## Dependencies
