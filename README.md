@@ -2,7 +2,8 @@
 The Thermal Pi project repository contains the code, schematics and 3D model documents to create a human body temperature screening device with a Raspberry Pi.
 This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
 
-![image](images_videos/Thermal Pixels and Ratio.png)
+![image](https://user-images.githubusercontent.com/99409502/183673117-a3b21eaf-9d1e-4720-a389-0dab4992c58e.png)
+
 
 ## Dependencies
 
