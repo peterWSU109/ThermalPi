@@ -19,12 +19,6 @@ This prototype was created as a Senior design project at Wichita State Universit
 6) Stretch Goal - Accuracy within +/- 0.5 degree Celcius (Possibly, see below)
 
 ### Notes on Accuracy
-    -The MLX90640 thermal camera is not accurate enough for this purpose by itself
-    -A methodology using facial detection, facial tracking, facial temperature averaging, and a multiple linear regression model was utilized
-    -As such, the accuracy of the model is only as good as the data given to model
-    -In our limited testing the device could indeed get +/- 0.5 celcius accuracy greater than 95% of the time
-    -However, Our temperature samples were limited and may not be accurate across all enviroments and populations
-    
-    -Moreover, given the limitations of this thermal camera  
-    -...and obtaining accurate skin temperatures via infared thermography in general
-    -This should only ever be used as screening device, all positive fevers should be followed up with verified method of obtaining core body temp
+The MLX90640 thermal camera is not accurate enough for this purpose by itself. A methodology using facial detection, facial tracking, facial temperature averaging, and a multiple linear regression model was utilized. As such, the accuracy of the model is only as good as the data given to model. In our limited testing the device could indeed get +/- 0.5 celcius accuracy greater than 95% of the time. **However, Our temperature samples were limited and may not be accurate across all enviroments and populations.**
+
+Moreover, given the limitations of this thermal camera and obtaining accurate skin temperatures via infared thermography in general, **This should only ever be used as screening device**. All positive fevers should be followed up with verified method of obtaining core body temperature
