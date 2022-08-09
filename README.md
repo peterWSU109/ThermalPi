@@ -2,6 +2,10 @@
 The Thermal Pi project repository contains the code, schematics and 3D model documents to create a contactless, human body temperature screening device with a Raspberry Pi. This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
 
 
+![image](https://user-images.githubusercontent.com/99409502/183681615-91228a1e-6a97-4f3c-8c00-d679fa8c1665.png)
+![image](https://user-images.githubusercontent.com/99409502/183681972-60288032-311e-4323-a0b5-ae1a2fa4eb10.png)
+
+
 ## Dependencies
 
 1) https://github.com/adafruit/Adafruit_MLX90640.git
