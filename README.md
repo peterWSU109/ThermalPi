@@ -23,7 +23,7 @@ The MLX90640 thermal camera is not accurate enough for this purpose by itself. A
 
 Moreover, given the limitations of this thermal camera and obtaining accurate skin temperatures via infared thermography in general, **This should only ever be used as screening device**. All positive fevers should be followed up with verified method of obtaining core body temperature
 
-## Design Overview
+## Core Design Overview
 The basic design involves involves four components the Raspberry Pi 4 B, the MLX90640 thermal camera, a conventional (optical light) Raspberrry Pi camera, and a small 5 inch LCD screen. The thermal camera and conventional camera are placed as close as possible so there fields of veiw overlap and they look a the same objects. The screen is used to indicate messages to the end user. The core loop of the code is as follows:
 
 1) Conventional camera detects faces and returns their pixel coordinates
