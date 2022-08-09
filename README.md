@@ -22,3 +22,15 @@ This prototype was created as a Senior design project at Wichita State Universit
 The MLX90640 thermal camera is not accurate enough for this purpose by itself. A methodology using facial detection, facial tracking, facial temperature averaging, and a multiple linear regression model was utilized. As such, the accuracy of the model is only as good as the data given to model. In our limited testing the device could indeed get +/- 0.5 celcius accuracy greater than 95% of the time. **However, Our temperature samples were limited and may not be accurate across all enviroments and populations.**
 
 Moreover, given the limitations of this thermal camera and obtaining accurate skin temperatures via infared thermography in general, **This should only ever be used as screening device**. All positive fevers should be followed up with verified method of obtaining core body temperature
+
+## Design Overview
+The basic design involves involves four components the Raspberry Pi 4 B, the MLX90640 thermal camera, a conventional (optical light) Raspberrry Pi camera, and a small 5 inch LCD screen. The thermal camera and conventional camera are placed as close as possible so there fields of veiw overlap and they look a the same objects. The screen is used to indicate messages to the end user. The core loop of the code is as follows:
+
+1) Conventional camera detects faces and returns their pixel coordinates
+2) The 'facial' pixel coordinates are then transformed to thermal camera coordinates
+3) The relevant 'facial' thermal camera pixels (which are just celcius temperatures) are used to calculate a core temperature
+4) if the calculated temperature is greater than 37.2 C (99.0 F) then display a message indicating 'fever', otherwise indicate 'fever free'
+
+
+
+
