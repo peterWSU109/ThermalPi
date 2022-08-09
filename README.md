@@ -7,15 +7,7 @@ The Thermal Pi project repository contains the code, schematics and 3D model doc
 ![image](https://user-images.githubusercontent.com/99409502/183682458-b8451d3c-55b2-4d2e-822c-af865bdd11c3.png)
 
 
-
-## Dependencies
-
-1) https://github.com/adafruit/Adafruit_MLX90640.git
-2) https://github.com/opencv/opencv-python.git
-3) https://github.com/scikit-learn/scikit-learn.git
-4) https://github.com/pandas-dev/pandas.git
-
-## Design Goals
+## Design Goals/Specifications
 
 1) Small (Able to be held with one hand), and lightweight (Achieved!)
 2) Screen people at a distance 3 to 6 feet (Achieved!)
@@ -37,6 +29,11 @@ The basic design involves involves four components the Raspberry Pi 4 B, the MLX
 3) The relevant 'facial' thermal camera pixels (which are just celcius temperatures) are used to calculate a core temperature
 4) if the calculated temperature is greater than 37.2 C (99.0 F) then display a message indicating 'fever', otherwise indicate 'fever free'
 
+## Dependencies
 
+1) https://github.com/adafruit/Adafruit_MLX90640.git
+2) https://github.com/opencv/opencv-python.git
+3) https://github.com/scikit-learn/scikit-learn.git
+4) https://github.com/pandas-dev/pandas.git
 
 
