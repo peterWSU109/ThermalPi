@@ -64,8 +64,8 @@ This code may be unecessary depending on how you would like to implement the pro
 
 ### Known Issues
 
-1) Code - The initial ambient temperature calibration can sometimes error because 'false' positive face is present
-2) hardware The 3D printed enclosure design can fit the hardware inside, but DOES NOT have effective mounts - We used some hot glue and drill to make it work :)
+1) Code - The initial ambient temperature calibration can sometimes error because a 'false' positive face is present
+2) hardware - The 3D printed enclosure design can fit the hardware inside, but DOES NOT have effective mounts - We used some hot glue and drill to make it work :)
 3) Code - The code that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
 
 ## Basic Installation
