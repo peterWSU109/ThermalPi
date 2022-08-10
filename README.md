@@ -6,7 +6,7 @@ The Thermal Pi project repository contains the code, schematics and 3D model doc
 ![image](https://user-images.githubusercontent.com/99409502/183681972-60288032-311e-4323-a0b5-ae1a2fa4eb10.png)
 ![image](https://user-images.githubusercontent.com/99409502/183682458-b8451d3c-55b2-4d2e-822c-af865bdd11c3.png)
 
-See video for basic demonstration [Video_demonstration](https://github.com/peterWSU109/ThermalPi/blob/796d23c62aa1abba13014b9afdf617d7c37640e8/images_videos/Thermal%20Scanner%20Demo.mp4)
+See video for basic demonstration [Video_demonstration](https://youtu.be/Jvymuu6-stE)
 
 
 ## Design Goals/Specifications
