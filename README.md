@@ -104,7 +104,7 @@ Assuming the camera is working, you should see an intermittent refresh of ASCII 
 
 ### Install the Rasberry Pi Optical Camera and Align with Thermal camera
 
-The cameras need to be aligned as close together as possible so thier respective fields of view (FOV) overlap as much as possible:
+The cameras need to be aligned so thier respective fields of view (FOV) overlap as much as possible:
 ![camera line up](https://github.com/peterWSU109/ThermalPi/blob/d1cf1d4a702ee568faaf213b1ca062d244e2f426/images_videos/physical%20camera%20line%20up.jpg)
 
 In the above configuration the software FOV settings should be aproximately correct.
