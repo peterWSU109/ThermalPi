@@ -37,19 +37,31 @@ The basic design involves involves four components the Raspberry Pi 4 B, the MLX
 
 **The images show the conversion from raw thermal and image data to a friendly UI**
 
-## Hardware Components
+## Hardware Components and Integration
 
-## Current Build Notes
+### Necessary Components
 
-### Hardware Tie-ins
+1) Raspberry Pi 4B 2 gig variant (more memory doesn't hurt but 2 gigabytes will suffice)
+2) MLX90640 55 degree FOV
+3) Arducam 5MP Camera for Raspberry Pi, 1080P HD OV5647 Camera Module V1 for Pi 4 (Any Pi camera will likely work)
+4) waveshare 5 inch hdmi lcd (b) 800×480 (We wouldn't suggest going less than 5 inches as the animations become very small)
 
-The current build has code for various hardware components toggled via GPIO pins, It requres two scripts to run at Pi start up:
+### Integration
+The current build has code for various hardware components toggled via GPIO pins. It requires two scripts to run at Pi start up.
+Everything below this header within Hardware Components may not be strictly necessary depending on how one would like to build this device.
 
 1) GPIO 11 and GPIO 4 toggle a relay to allow for single push button on/off, see [pi_power_button explanation](https://github.com/peterWSU109/ThermalPi/blob/59b25400a38b9f8c12cb0b1cb150e04c7f70e910/Pi_Power_Button_Explanation.jpg)
 2) GPIO 23 toggles a relay that activates the screen backlight (The team directly soldered a relay to short circuit a backlight switch)
 3) GPIO 24 toggles a relay that activates a case fan
 
-### Known Issues
+### Misc. Components
+This project was for stand alone device that could operate on a 5v cellphone battery, the following items helped acheive this goal:
+
+1) 3-way toggle switch for battery-off-wall operation
+2) 2 Reed relays. Operating voltage ~3volts and can switch at least 500ma at 5v (used for fan and backlight, ordered off of digi-key)
+3) Relay with Normally Open and Normally Closed Terminals and Trigger (Trigger not strictly necessary but was incorporated in our design)
+
+## Known Issues
 
 1) Code - The initial ambient temperature calibration can sometimes error because 'false' positive face is present
 2) hardware The 3D printed enclosure design can fit the hardware inside, but DOES NOT have effective mounts - We used some hot glue and drill to make it work :)
