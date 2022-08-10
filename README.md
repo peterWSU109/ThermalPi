@@ -68,7 +68,7 @@ This code may be unecessary depending on how you would like to implement the pro
 2) hardware The 3D printed enclosure design can fit the hardware inside, but DOES NOT have effective mounts - We used some hot glue and drill to make it work :)
 3) Code - The code that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
 
-## Installation
+## Basic Installation
 
 ### Setting up the thermal camera
 There are many guides online for setting up the MLX90640 thermal camera on the Raspberry Pi.
