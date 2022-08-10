@@ -81,6 +81,7 @@ However I thought it might be nice to have exact steps laid out
 3) sudo apt install python-smbus
 4) sudo apt install python i2c-tools
 5) sudo pip3 install python RPI.GPIO
+6) sudo pip3 install adafruit-circuitpython-mlx90640
 
  *Install matplot libray if following along in the video, not necessary for this implementation*
  
