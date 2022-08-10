@@ -57,7 +57,7 @@ See [Full_Schematic](https://github.com/peterWSU109/ThermalPi/blob/0f1ca807e247e
 
 ### Code for misc. hardware components
 The current build has code for various hardware components toggled via GPIO pins. It requires two scripts to run at Pi start up.
-This code may be unecessary depending on how you would like to implement the project.
+This code may be unnecessary depending on how you would like to implement the project.
 1) GPIO 11 and GPIO 4 toggle a relay to allow for single push button on/off 
 2) GPIO 23 toggles a relay that activates the screen backlight (The team directly soldered a relay to short circuit a backlight switch)
 3) GPIO 24 toggles a relay that activates a case fan
@@ -104,9 +104,28 @@ Assuming the camera is working, you should see an intermittent refresh of ASCII 
 
 ### Install the Rasberry Pi Optical Camera and Align with Thermal camera
 
-The cameras need to be aligned so thier respective fields of view (FOV) overlap as much as possible:
+However the cameras may be mounted, the cameras need to be aligned so thier respective fields of view (FOV) overlap as much as possible:
+
 ![camera line up](https://github.com/peterWSU109/ThermalPi/blob/d1cf1d4a702ee568faaf213b1ca062d244e2f426/images_videos/physical%20camera%20line%20up.jpg)
 
 In the above configuration the software FOV settings should be aproximately correct.
+
+### Final Dependencies to install
+
+1) sudo apt-get install python-opencv
+2) sudo apt-get install python-pandas
+3) pip install -U scikit-learn
+
+### Necessary files and execution
+
+Put these files and folders in the same directory
+1) main_loop.py
+2) main_functions.py
+3) haarcascades
+4) assets
+
+Finally execute main_loop.py. The program will default into full screen mode and can be exited by pressing 'Q' on the keyboard.
+Upon program starting, be sure to stay out of the way of the cameras as it is measuring the ambient temperture of the room. Have Fun!
+
 
 
