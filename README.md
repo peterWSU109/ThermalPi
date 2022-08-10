@@ -69,13 +69,14 @@ This code may be unecessary depending on how you would like to implement the pro
 3) Code - The code that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
 
 ## Basic Installation
-
 ### Setting up the thermal camera
 There are many guides online for setting up the MLX90640 thermal camera on the Raspberry Pi.
-A quick and fast guide uploaded by Smart Home Everything is here https://www.youtube.com/watch?v=XRwbcsbh33w.
-However I thought it might be nice to have exact steps laid out
+These guides will discuss both how to physically connect the thermal camera to Pi and the necessary software packages.
 
-#### Type the following into terminal to install the necessary packages:
+1) A very detailed written guide can be found here [adafruit-mlx90640-ir-thermal-camera](https://learn.adafruit.com/adafruit-mlx90640-ir-thermal-camera)
+2) A quick and fast guide uploaded by Smart Home Everything is here https://www.youtube.com/watch?v=XRwbcsbh33w.
+
+#### A quick list of commands to get the necessary packages
 1) sudo apt install python3-scipy
 2) sudo apt install python3-numpy
 3) sudo apt install python-smbus
@@ -83,7 +84,7 @@ However I thought it might be nice to have exact steps laid out
 5) sudo pip3 install python RPI.GPIO
 6) sudo pip3 install adafruit-circuitpython-mlx90640
 
- *Install matplot libray if following along in the video, not necessary for this implementation*
+ *Install matplot library if following along in the video, however it is not necessary for this project*
  
  7) sudo apt install python3 matplot-lib
 
@@ -100,3 +101,5 @@ However I thought it might be nice to have exact steps laid out
 2) Next run a quick test program, one is available in the reference code section in the main branch, [adacircuitpython example_code](https://github.com/peterWSU109/ThermalPi/blob/01376b959330d6dd1ddbc45c62da55b1f1fccd90/Reference_Code/Thermal_Camera_Example_Code.py)
 
 Assuming the camera is working, you should see an intermittent refresh of ASCII characters scrolling down the screen. These characters should change as you move the camera around the room, as they represent different temperature values.
+
+### Install the Rasberry Pi Camera
