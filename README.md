@@ -37,6 +37,8 @@ The basic design involves involves four components the Raspberry Pi 4 B, the MLX
 
 **The images show the conversion from raw thermal and image data to a friendly UI**
 
+## Hardware Components
+
 ## Current Build Notes
 
 ### Hardware Tie-ins
@@ -49,8 +51,8 @@ The current build has code for various hardware components toggled via GPIO pins
 
 ### Known Issues
 
-1) The initial ambient temperature calibration can sometimes error because 'false' positive face is presetn
-
+1) Code - The initial ambient temperature calibration can sometimes error because 'false' positive face is present
+2) hardware The 3D printed enclosure design can fit the hardware inside, but DOES NOT have effective mounts - We used some hot glue and drill to make it work :)
 
 ## Installation
 
