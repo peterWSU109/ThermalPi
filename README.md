@@ -76,7 +76,7 @@ These guides will discuss both how to physically connect the thermal camera to P
 1) A very detailed written guide can be found here [adafruit-mlx90640-ir-thermal-camera](https://learn.adafruit.com/adafruit-mlx90640-ir-thermal-camera)
 2) A quick and fast guide uploaded by Smart Home Everything is here https://www.youtube.com/watch?v=XRwbcsbh33w.
 
-#### Thought the guides above are great, this is quick list of commands/steps to get the necessary packages
+#### Though the guides above are great, this is quick list of commands/steps to get the necessary packages
 1) sudo apt install python3-scipy
 2) sudo apt install python3-numpy
 3) sudo apt install python-smbus
