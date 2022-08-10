@@ -89,10 +89,11 @@ However I thought it might be nice to have exact steps laid out here
 1) Go to terminal and type "sudo nano config.txt"
 2) On the line directly below "Uncomment some or all of these to enable the optional hardware interfaces" type the following:
       "dtparam=i2c_arm=on,i2c_arm_baudrate=400000"
-3) Reboot the Raspberry Pi
+3) Save changes and exit the file
+4) Reboot the Raspberry Pi
 
 #### Check if the camera is detected by the Raspberry Pi
 *This section is different than the youtube video link*
-1) type "i2c_detect -y l" into terminal
-2) if it is detected then run a quick test program, one is available in the reference code section in the main branch, [adacircuitpython example_code](https://github.com/peterWSU109/ThermalPi/blob/01376b959330d6dd1ddbc45c62da55b1f1fccd90/Reference_Code/Thermal_Camera_Example_Code.py)
+1) Type "i2c_detect -y l" into terminal. If is detected a single integer value should be present in a grid array of underscores
+2) Next run a quick test program, one is available in the reference code section in the main branch, [adacircuitpython example_code](https://github.com/peterWSU109/ThermalPi/blob/01376b959330d6dd1ddbc45c62da55b1f1fccd90/Reference_Code/Thermal_Camera_Example_Code.py)
 
