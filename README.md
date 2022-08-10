@@ -70,6 +70,13 @@ This code may be unecessary depending on how you would like to implement the pro
 
 ## Installation
 
+### Setting up the thermal camera
 
+Install the following to get the thermal camera up and running:
+1) sudo apt install python3-scipy
+2) sudo apt install python3-numpy
+3) sudo apt install python-smbus
+4) sudo apt install python i2c-tools
+5) sudo pip3 install python RPI.GPIO 
 
 
