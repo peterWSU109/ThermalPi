@@ -81,9 +81,9 @@ However I thought it might be nice to have exact steps laid out here
 3) sudo apt install python-smbus
 4) sudo apt install python i2c-tools
 5) sudo pip3 install python RPI.GPIO
-*Install matplot libray if following along in the video, not necessary for this implementation*
-6) sudo apt install python3 matplot-lib
 
+ *Install matplot libray if following along in the video, not necessary for this implementation*
+6) sudo apt install python3 matplot-lib
 
 #### Turn on the I2C interface and set the Baud rate
 1) Go to terminal and type "sudo nano config.txt"
