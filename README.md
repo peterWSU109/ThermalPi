@@ -55,7 +55,7 @@ Everything below this header within Hardware Components may not be strictly nece
 3) GPIO 24 toggles a relay that activates a case fan
 
 ### Misc. Components
-This project was for stand alone device that could operate on a 5v cellphone battery, the following items helped acheive this goal:
+The following components helped acheive the above integration
 
 1) 3-way toggle switch for battery-off-wall operation
 2) 2 Reed relays. Operating voltage ~3volts and can switch at least 500ma at 5v (used for fan and backlight, ordered off of digi-key)
