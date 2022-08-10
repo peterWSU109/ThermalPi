@@ -30,7 +30,7 @@ The basic design involves involves four components the Raspberry Pi 4 B, the MLX
 1) Conventional camera detects faces and returns their pixel coordinates
 2) The 'facial' pixel coordinates are then transformed to thermal camera coordinates
 3) The relevant 'facial' thermal camera pixels (which are just celcius temperatures) are used to calculate a core temperature
-4) Indicate results of calculation via friendly UI
+4) The results of the calculation are communicated to end user via a friendly UI
 
 ![image](https://user-images.githubusercontent.com/99409502/183878792-c5ec24fb-e5d1-4133-99b2-cbb46d1a874b.png)
 ![image](https://user-images.githubusercontent.com/99409502/183878865-9a9539d5-b326-4009-9476-f518b094951c.png)
