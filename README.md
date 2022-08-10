@@ -93,8 +93,9 @@ However I thought it might be nice to have exact steps laid out
 3) Save changes and exit the file
 4) Reboot the Raspberry Pi
 
-#### Check if the camera is detected by the Raspberry Pi
+#### Check if the camera is detected by the Raspberry Pi and test
 *This section is different than the youtube video link*
 1) Type "i2c_detect -y l" into terminal. If is detected a single integer value should be present in a grid array of underscores
 2) Next run a quick test program, one is available in the reference code section in the main branch, [adacircuitpython example_code](https://github.com/peterWSU109/ThermalPi/blob/01376b959330d6dd1ddbc45c62da55b1f1fccd90/Reference_Code/Thermal_Camera_Example_Code.py)
 
+Assuming the camera is working, you should see an intermittent refresh of ASCII characters scrolling down the screen. These characters should change as you move the camera around the room, as they represent different temperature values.
