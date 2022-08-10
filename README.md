@@ -66,17 +66,30 @@ This code may be unecessary depending on how you would like to implement the pro
 
 1) Code - The initial ambient temperature calibration can sometimes error because 'false' positive face is present
 2) hardware The 3D printed enclosure design can fit the hardware inside, but DOES NOT have effective mounts - We used some hot glue and drill to make it work :)
-3) Code - The code that adjust for mismatched FOVs of the thermal camer and conventional camera is very basic. Could be written much better to adjust for lens distortion
+3) Code - The code that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
 
 ## Installation
 
 ### Setting up the thermal camera
+There are many guides online for setting up the MLX90640 thermal camera on the Raspberry Pi.
+A quick and fast guide uploaded by Smart Home Everything is here https://www.youtube.com/watch?v=XRwbcsbh33w.
+However I thought it might be nice to have exact steps laid out here
 
-Install the following to get the thermal camera up and running:
+####Type the following into terminal to install the necessary packages:
 1) sudo apt install python3-scipy
 2) sudo apt install python3-numpy
 3) sudo apt install python-smbus
 4) sudo apt install python i2c-tools
 5) sudo pip3 install python RPI.GPIO 
 
+####Turn on the I2C interface and set Baud rate
+1) Go to terminal and type "sudo nano config.txt"
+2) On the line directly below "Uncomment some or all of these to enable the optional hardware interfaces" type the following:
+      "dtparam=i2c_arm=on,i2c_arm_baudrate=400000"
+3) Reboot the Raspberry Pi
+
+####Check if the camera is detected by the Raspberry Pi
+This section is different than the youtube video link
+1) type "i2c_detect -y l" into terminal
+2) if it is detected then run a quick test program
 
