@@ -85,7 +85,7 @@ However I thought it might be nice to have exact steps laid out
 
  *Install matplot libray if following along in the video, not necessary for this implementation*
  
- 6) sudo apt install python3 matplot-lib
+ 7) sudo apt install python3 matplot-lib
 
 #### Turn on the I2C interface and set the Baud rate
 1) Go to terminal and type "sudo nano config.txt"
