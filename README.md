@@ -75,21 +75,24 @@ There are many guides online for setting up the MLX90640 thermal camera on the R
 A quick and fast guide uploaded by Smart Home Everything is here https://www.youtube.com/watch?v=XRwbcsbh33w.
 However I thought it might be nice to have exact steps laid out here
 
-####Type the following into terminal to install the necessary packages:
+#### Type the following into terminal to install the necessary packages:
 1) sudo apt install python3-scipy
 2) sudo apt install python3-numpy
 3) sudo apt install python-smbus
 4) sudo apt install python i2c-tools
-5) sudo pip3 install python RPI.GPIO 
+5) sudo pip3 install python RPI.GPIO
+*Install matplot libray if following along in the video, not necessary for this implementation*
+6) sudo apt install python3 matplot-lib
 
-####Turn on the I2C interface and set Baud rate
+
+#### Turn on the I2C interface and set the Baud rate
 1) Go to terminal and type "sudo nano config.txt"
 2) On the line directly below "Uncomment some or all of these to enable the optional hardware interfaces" type the following:
       "dtparam=i2c_arm=on,i2c_arm_baudrate=400000"
 3) Reboot the Raspberry Pi
 
-####Check if the camera is detected by the Raspberry Pi
-This section is different than the youtube video link
+#### Check if the camera is detected by the Raspberry Pi
+*This section is different than the youtube video link*
 1) type "i2c_detect -y l" into terminal
-2) if it is detected then run a quick test program
+2) if it is detected then run a quick test program, one is available in the reference code section in the main branch, [adacircuitpython example_code](https://github.com/peterWSU109/ThermalPi/blob/01376b959330d6dd1ddbc45c62da55b1f1fccd90/Reference_Code/Thermal_Camera_Example_Code.py)
 
