@@ -11,18 +11,18 @@ See video for basic demonstration [Video_demonstration](https://youtu.be/Jvymuu6
 
 ## Design Goals/Specifications
 
-1) Small (Able to be held with one hand), and lightweight (Achieved!)
-2) Screen people at a distance 3 to 6 feet (Achieved!)
-3) Complete screening in less than 3 seconds (Achieved!)
-4) Create friendly UI for the end user (Achieved!)
-5) Stretch Goal - Measure multiple users at once (Achieved!)
+1) Small (Able to be held with one hand), and lightweight (Met!)
+2) Screen people at a distance 3 to 6 feet (Met!)
+3) Complete screening in less than 3 seconds (Met!)
+4) Create friendly UI for the end user (Met!)
+5) Stretch Goal - Measure multiple users at once (Met!)
 6) Stretch Goal - Run for a full work day on battery (Can Run 5 to 8 hours depending on usage)
 7) Stretch Goal - Accuracy within +/- 0.5 degree Celcius (Possibly, see below)
 
 ### Notes on Accuracy
 The MLX90640 thermal camera is not accurate enough for this purpose by itself. A methodology using facial detection, facial tracking, facial temperature averaging, and a multiple linear regression model was utilized. As such, the accuracy of the model is only as good as the data given to model. In our limited testing the device could indeed get +/- 0.5 celcius accuracy greater than 95% of the time. **However, Our temperature samples were limited and may not be accurate across all enviroments and populations.**
 
-Moreover, given the limitations of this thermal camera and obtaining accurate skin temperatures via infared thermography in general, **This should only ever be used as screening device**. All positive fevers should be followed up with verified method of obtaining core body temperature.
+Moreover, given the limitations of this thermal camera and obtaining accurate skin temperatures via infared thermography in general, **This should only ever be used as screening device. All positive fevers should be followed up with verified method of obtaining core body temperature.**
 
 ## Core Design Overview
 The basic design involves involves four components the Raspberry Pi 4 B, the MLX90640 thermal camera, a conventional (optical light) Raspberrry Pi camera, and a small 5 inch LCD screen. The thermal camera and conventional camera are placed as close as possible so thier fields of veiw overlap and they look at the same objects. The screen is used to indicate messages to the end user. The core loop of the code is as follows:
