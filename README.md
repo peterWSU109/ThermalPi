@@ -73,7 +73,7 @@ This code may be unecessary depending on how you would like to implement the pro
 ### Setting up the thermal camera
 There are many guides online for setting up the MLX90640 thermal camera on the Raspberry Pi.
 A quick and fast guide uploaded by Smart Home Everything is here https://www.youtube.com/watch?v=XRwbcsbh33w.
-However I thought it might be nice to have exact steps laid out here
+However I thought it might be nice to have exact steps laid out
 
 #### Type the following into terminal to install the necessary packages:
 1) sudo apt install python3-scipy
