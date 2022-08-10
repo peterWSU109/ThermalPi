@@ -102,4 +102,7 @@ These guides will discuss both how to physically connect the thermal camera to P
 
 Assuming the camera is working, you should see an intermittent refresh of ASCII characters scrolling down the screen. These characters should change as you move the camera around the room, as they represent different temperature values.
 
-### Install the Rasberry Pi Camera
+### Install the Rasberry Pi Optical Camera and Align with Thermal camera
+
+The cameras need to be aligned as close together as possible so thier respective fields of view overlap as much as possible
+
