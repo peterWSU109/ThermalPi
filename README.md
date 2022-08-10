@@ -6,6 +6,8 @@ The Thermal Pi project repository contains the code, schematics and 3D model doc
 ![image](https://user-images.githubusercontent.com/99409502/183681972-60288032-311e-4323-a0b5-ae1a2fa4eb10.png)
 ![image](https://user-images.githubusercontent.com/99409502/183682458-b8451d3c-55b2-4d2e-822c-af865bdd11c3.png)
 
+See video for basic demonstration [Video_demonstration](https://github.com/peterWSU109/ThermalPi/blob/796d23c62aa1abba13014b9afdf617d7c37640e8/images_videos/Thermal%20Scanner%20Demo.mp4)
+
 
 ## Design Goals/Specifications
 
@@ -45,12 +47,13 @@ The current build has code for various hardware components toggled via GPIO pins
 2) GPIO 23 toggles a relay that activates the screen backlight (The team directly soldered a relay to short circuit a backlight switch)
 3) GPIO 24 toggles a relay that activates a case fan
 
+### Known Issues
 
-## Dependencies
+1) The initial ambient temperature calibration can sometimes error because 'false' positive face is presetn
 
-1) https://github.com/adafruit/Adafruit_MLX90640.git
-2) https://github.com/opencv/opencv-python.git
-3) https://github.com/scikit-learn/scikit-learn.git
-4) https://github.com/pandas-dev/pandas.git
+
+## Installation
+
+
 
 
