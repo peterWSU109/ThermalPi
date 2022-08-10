@@ -57,7 +57,7 @@ See [Full_Schematic](https://github.com/peterWSU109/ThermalPi/blob/0f1ca807e247e
 
 ### Code for misc. hardware components
 The current build has code for various hardware components toggled via GPIO pins. It requires two scripts to run at Pi start up.
-
+This code may be unecessary depending on how you would like to implement the project.
 1) GPIO 11 and GPIO 4 toggle a relay to allow for single push button on/off, see [pi_power_button explanation](https://github.com/peterWSU109/ThermalPi/blob/59b25400a38b9f8c12cb0b1cb150e04c7f70e910/Pi_Power_Button_Explanation.jpg)
 2) GPIO 23 toggles a relay that activates the screen backlight (The team directly soldered a relay to short circuit a backlight switch)
 3) GPIO 24 toggles a relay that activates a case fan
