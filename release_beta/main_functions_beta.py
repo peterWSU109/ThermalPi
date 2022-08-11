@@ -1,12 +1,12 @@
 #Contains the person object and all necessary functions except the Draw functions
+#This release version does not have any GPIO components
+
 import math
 import board
 import busio
 import adafruit_mlx90640
 import numpy as np
 import threading
-import RPi.GPIO as GPIO
-from gpiozero import CPUTemperature
 import time
 
 
@@ -14,14 +14,6 @@ import time
 i2c = busio.I2C(board.SCL, board.SDA, frequency=1000000)
 mlx = adafruit_mlx90640.MLX90640(i2c)
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_4_HZ
-
-#GPIO setup for turning on backlight and cooling fan
-#23 = screen
-#24 = fan
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(23, GPIO.OUT)
-GPIO.output(23, GPIO.HIGH)
-GPIO.setup(24, GPIO.OUT)
 
 
 
@@ -36,15 +28,10 @@ fever_message_timer = 0
 obstruction_message_timer = 0
 cool_message_timer = 0
 
-#Fan Timer - Once the threshold temperature is met the fan will run for Fan_Timer long and then reassess
-fan_timer_limit = 100
-thermal_limit = 75
 
 #The default setting is 30 celcius but will be readjusted to 3 standard deviations above the ambient temperature
 #this is used to determine the line between a face and not a face
 rel_temp = 30
-cpu0 = CPUTemperature()
-cpu_temp = cpu0.temperature
 
 
 #ambient temperatrue of surfaces measured by thermal camera
@@ -56,11 +43,6 @@ ambient = 0
 face_is_present = False
 person_is_present = False
 
-#The thermal camera thread updates the movement_detected_timer everytime movement is detected
-#As so long as the value is above 0, the main thread will continue to chug along and the screen will stay on
-sleep_timer = 200
-movement_detected_timer = sleep_timer
-display_power = True
 
 #max_face_temp stores the maximum facial temperature pixel value at any given time - this is used in the coffee detector
 max_face_temp = 35
@@ -210,18 +192,11 @@ frame = [0] * 768
     
 #This function runs as a seperate thread in the main loop to update thermal pixel values
 def refresh_thermalCamera():
-    global fan_timer_limit
-    global thermal_limit
     global raw_temp_cutoff
     global ambient
     global face_is_present
     global rel_temp
-    global movement_detected_timer
-    global display_power
-    global cpu_temp
-    fan_timer = 0
-    #This frame holds the temp values for movement analysis
-    movement_frame = []
+
     #gets 32x24 frame of thermal pixels from thermal camera camera
     while True:
         if debug_prompt == False:
@@ -259,32 +234,6 @@ def refresh_thermalCamera():
             rel_temp = 3*(np.std(adj_frame)) + ambient + 2
             raw_temp_cutoff = rel_temp + 2
             print(rel_temp, ambient)
-            
-        #Detects movement by looking for changes in thermal pixel values between frames
-        if movement_frame and frame and debug_prompt == False:
-            for i in range(0,96):
-                if not (-3 < frame[i*8] - movement_frame[i] < 3):
-                    movement_detected_timer =  sleep_timer
-                    if display_power == False:
-                        GPIO.output(23, GPIO.HIGH)
-                        display_power = True
-                elif movement_detected_timer == 0:
-                    GPIO.output(23, GPIO.LOW)
-                    display_power = False
-        for i in range(0,96):
-            movement_frame.append(frame[i*8])
-        
-        #Turns on Fan if CPU temp is too high
-        cpu = CPUTemperature()
-        cpu_temp = cpu.temperature
-        if fan_timer == 0:
-            if cpu_temp > thermal_limit:
-                fan_timer = fan_timer_limit
-                GPIO.output(24, GPIO.HIGH)
-            else:
-                GPIO.output(24, GPIO.LOW)
-        else:
-            fan_timer = fan_timer -1
                 
         
 
