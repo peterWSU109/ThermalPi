@@ -1,4 +1,4 @@
-import main_functions as mf
+import main_functions_beta as mf
 import threading
 import time
 import cv2
@@ -8,19 +8,29 @@ import pandas as pd
 import os
 from sklearn.linear_model import LinearRegression
 
+#Display most recent temp in left hand corner
+display_temp = True
+
+#Distance and raw_temp limits - ignores results at fringe measurements
+limits_on = True
+distance_limit = 200
+raw_temp_limit = 29
 
 #debug toggles
-debug = True
-#Record raw uncorrected temps
+debug = False
+#if rapid cycle is false will just show graph and camera vision
+if debug == True:
+    rapid_cycle = True
+#Record raw uncorrected temps - useful for creating a new model
 raw_temp = False
 #Run a quick regression on the data - otherwise just test the current model - will want to set raw temps to True
 quick_regression = False
-#Save the Calculated Temps/Ratios/Std deviations/Ambient temp/ Distance to a Dataframe File
+#Save the Calculated Temps/Ratios/Ambient temp/ Distance to a Dataframe File
 send_to_file = False
 #For Debug - ensures each calculated temperature is done from narrow range of distances
 distance_control = False
 #For Debug - Represents the validated control temp for regression analysis
-my_temp = 36.6
+my_temp = 36.9
 
 
 #basic font settings from openCV
@@ -30,8 +40,8 @@ thickness = 1
 fontScale = 0.6
 
 #haarcascade algorithmn openCV uses to detect faces in images
-face_cascade = cv2.CascadeClassifier('/home/pi/Desktop/haarcascades/opencv_haarcascade_frontalface_alt.xml')
-face_cascade_2 = cv2.CascadeClassifier('/home/pi/Desktop/haarcascades/haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier(os.getcwd() +'/haarcascades/opencv_haarcascade_frontalface_alt.xml')
+face_cascade_2 = cv2.CascadeClassifier(os.getcwd() + '/haarcascades/haarcascade_frontalface_default.xml')
 
 
 #video capture settings
@@ -41,17 +51,17 @@ cap.set(4,mf.v_res)
 cap.set(cv2.CAP_PROP_FPS, 30)
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-#Possible Fever D(103,50) RGB(255,127,39)
-#Move Closer D(94,19) RGB(0,0,255)
-#Fever Free D(82,14) RGB(0,0,255)
-#Too Close D(72,14) RGB(255,242,0)
+#Possible Fever  RGB(255,127,39)
+#Move Closer  RGB(0,0,255)
+#Fever Free  RGB(0,0,255)
+#Too Close RGB(255,242,0)
 #Possible Forehead Obstruction D(87,52) RGB(163,73,164)
-#Calculating D(101,18) RGB(127,127,127)
-#Face Screen D(87,16) RGB(63,72,204)
+#Calculating  RGB(127,127,127)
+#Face Screen RGB(63,72,204)
 
 #How many frames for the background to cycle
 background_cycle_frame = 100
-file_list = os.listdir(os.getcwd() +"/assets")
+file_list = os.listdir(os.getcwd() + "/assets")
 file_list.sort()
 
 #background array and string path
@@ -86,7 +96,7 @@ ambient_temp = []
 standard_dev = []
 
 #Debug regression analysis cycles
-debug_temp_limit = 200
+debug_temp_limit = 100000
 debug_temp_count = debug_temp_limit
 debug_person_count = 0
 debug_color = (0,0,255)
@@ -293,11 +303,23 @@ while True:
                         if temperatures[1] > 0:
                             if temperatures[2]/temperatures[1] > 0.3:
                                 #print("area", temperatures[1], "t_pixels", temperatures[2], "ratio", temperatures[2]/temperatures[1])
-                                people[i].alive = True
-                                if temperatures[3] > 2:
-                                    people[i].def_temp = 1
+                                temps = []
+                                temps.append(temperatures)
+                                #if debug == True:
+                                    #print("Alive? : ",mf.def_temp_calc(temps, mf.temperature_average(temperatures), raw_temp))
+                                    #print(temperatures)
+                                if mf.def_temp_calc(temps, mf.temperature_average(temperatures), raw_temp) >= 35.0 and raw_temp == True:
+                                    if limits_on == True:
+                                        if temperatures[0] < distance_limit and mf.temperature_average(temperatures) > raw_temp_limit:
+                                            people[i].alive = True
+                                    else:
+                                        people[i].alive = True
+                                    if temperatures[3] > 2:
+                                        people[i].def_temp = 1
+                                    else:
+                                        people[i].def_temp = 0
                                 else:
-                                    people[i].def_temp = 0
+                                    people[i].alive = True
                     
                         
                     #For the coffee Detector - remove coffee that is gone
@@ -328,11 +350,13 @@ while True:
                             people[i].def_temp = -3
                         #needs at least 1 pixel to be considered for calculation and person is in FOV of thermal camera
                         if temperatures[2] >= 1 and new_def_temp > -2:
-                            #possible obstruction -> less than 50% of face > relevent temp and person is close to camera or calculated temp < 35.0 per calculated def_temp function
-                            if (temperatures[2]/temperatures[1] <= 0.5 and people[i].distance < 100 and people[i].obstruction_count > 0) or people[i].def_temp == 3:
+                            #possible obstruction -> less than 50% of face > relevent temp and person is close to camera 
+                            if temperatures[2]/temperatures[1] <= 0.5 and people[i].distance < 100 and people[i].obstruction_count > 0:
                                 people[i].obstruction_count = people[i].obstruction_count - 1
-                                if new_def_temp != 3:
-                                    new_def_temp = 2
+                                new_def_temp = 2
+                            #calculated temp < 35.0 per calculated def_temp function
+                            elif people[i].def_temp == 3 and people[i].obstruction_count > 0:
+                                people[i].obstruction_count = people[i].obstruction_count - 1
                             #calculating - appends new temp array 
                             elif temperatures[2]/temperatures[1] > 0.50 and temperatures[1] <= 500 and len(temperatures) > 4:
                                 #provides distance control
@@ -364,7 +388,7 @@ while True:
                                 people[i].total_temps = 0
                                 new_def_temp = -4
                             else:
-                                new_def_temp = mf.def_temp_calc(people[i].temps, people[i].standard_dev, people[i].average_temp, raw_temp)
+                                new_def_temp = mf.def_temp_calc(people[i].temps, people[i].average_temp, raw_temp)
                                 if debug == True:
                                     people[i].w_distance = mf.weighted_average(people[i].temps, 0)
                                     people[i].w_area = mf.weighted_average(people[i].temps,1 )
@@ -535,6 +559,12 @@ while True:
                     fontScale = 0.7
                     string = "Possible Fever"
                     mf.fever_message_timer = 80
+                
+                #displays temp if equal to true
+                if display_temp == True:
+                    cv2.rectangle(bkrg, (600,0), (800,60), (0,255,0),-1)
+                    my_temp_string = str(int(people[i].def_temp*10)/10)
+                    bkrg = cv2.putText(bkrg, my_temp_string, (600,50), font, 2, (0,0,0), 2, cv2.LINE_AA, False)
                                
                 
                 #Sets scale and length for text above stick figure's head
@@ -569,10 +599,6 @@ while True:
                         cv2.circle(graphic, (x_cor,y_cor), 3, debug_color, -1)
                         cv2.imshow('graph', graphic)
                         
-                        #Draws points of Distance for temp on Graph background
-                        print("temp ",round(people[i].def_temp,1), "distance ", people[i].w_distance, "area ", people[i].w_area, end = "")
-                        print(" t_pixels ", people[i].w_t_pixels, "ratio ",people[i].w_t_pixels/people[i].w_area, "standard_dev ", people[i].standard_dev)
-                        
                         #Collects the residuals between the measured temp and the manually enterd real temp
                         #along with people values for regression later on
                         def_temps.append(people[i].def_temp)
@@ -582,9 +608,13 @@ while True:
                         standard_dev.append(people[i].standard_dev)
                         
                         #this resets a person temp information so they will be constantly remeasured
-                        people[i].def_temp = 0
-                        people[i].temps = []
-                        people[i].total_temps = 0
+                        if rapid_cycle == True:
+                            print("temp ",round(people[i].def_temp,1), "distance ", people[i].w_distance, "area ", people[i].w_area, end = "")
+                            print(" t_pixels ", people[i].w_t_pixels, "ratio ",people[i].w_t_pixels/people[i].w_area, "standard_dev ", people[i].standard_dev)
+                            people[i].def_temp = 0
+                            people[i].temps = []
+                            people[i].total_temps = 0
+                            
         
                         #if debug is true the following code will collect tempatures in sets and occassionally ask for new temperatures
                         #if a new participate would like to be included in the data set
@@ -749,7 +779,7 @@ if debug == True:
     
     #Writes all Test data as text on the graph
     string2 = "number of samples: " + str(len(values))
-    string3 = "def_temp = rawT + D*" + str(round(mf.distance_beta,4)) + "1/D*"+ str(round(mf.one_distance_beta)) +" + rawT*D*" + str(round(mf.distance_temp_beta,4))  + " + ratio*"+ str(ratio_y) + " + " + " ambient*" + str(round(mf.ambient_beta,4)) + " + " + str(round(mf.y_intercept,4))
+    string3 = "def_temp = rawT + D*" + str(round(mf.distance_beta,4)) + " + 1/D*"+ str(round(mf.one_distance_beta,4)) +" + rawT*D*" + str(round(mf.distance_temp_beta,4))  + " + ratio*"+ str(round(mf.ratio_beta,4)) + " + " + " ambient*" + str(round(mf.ambient_beta,4)) + " + " + str(round(mf.y_intercept,4))
     string4 = "Out of Range: " + str(wrong_temps)
     string6 = "Percentage OOR: " + str(wrong_temps/total_test_temps)
     string5 = "ambient temp" + str(round(mf.ambient,2))
@@ -775,3 +805,4 @@ if debug == True:
 cap.release()
 cv2.destroyAllWindows()
 exit(0)
+
