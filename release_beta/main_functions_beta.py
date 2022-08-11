@@ -34,6 +34,7 @@ cool_message_timer = 0
 rel_temp = 30
 
 
+
 #ambient temperatrue of surfaces measured by thermal camera
 ambient = 0
 
@@ -44,7 +45,7 @@ face_is_present = False
 person_is_present = False
 
 #The thermal camera thread updates the movement_detected_timer everytime movement is detected
-#As so long as the value is above 0, the main thread will continue to chug along
+#As so long as the value is above 0, the main thread will continue to chug along and the screen will stay on
 sleep_timer = 200
 movement_detected_timer = sleep_timer
 
@@ -197,13 +198,11 @@ frame = [0] * 768
     
 #This function runs as a seperate thread in the main loop to update thermal pixel values
 def refresh_thermalCamera():
-    global fan_timer_limit
     global thermal_limit
     global raw_temp_cutoff
     global ambient
     global face_is_present
     global rel_temp
-    global movement_detected_timer
 
     fan_timer = 0
     #This frame holds the temp values for movement analysis
@@ -292,7 +291,7 @@ def cel_to_far( t ):
    
 
 #calculates the Definitive temperature of a person
-def def_temp_calc( temps, std_dev, ave_temp, raw_temp):
+def def_temp_calc( temps, ave_temp, raw_temp):
     correction = 0
     def_temp = 0
     temp = []
@@ -317,7 +316,6 @@ def def_temp_calc( temps, std_dev, ave_temp, raw_temp):
 
     def_temp = np.average(temp)
     if def_temp < 35.0 and raw_temp == False:
-        print(def_temp)
         if temps[-1][0] < 100:
             def_temp = 3
         else:
@@ -477,9 +475,9 @@ def create_thermal_image( r ):
         for w in range(32):
             x_end = lx_offset + tc_horz_scale
             t = frame[h * 32 + w]
-            if t < rel_temp:
+            if t < 30.5:
                 r[ly_offset: y_end, lx_offset: x_end] = (0)
-            elif rel_temp <= t < 31:
+            elif 30.5 <= t < 31:
                  r[ly_offset: y_end, lx_offset: x_end] = (255)
             elif 31 <= t < 32:
                  r[ly_offset: y_end, lx_offset: x_end] = (255)
@@ -508,4 +506,5 @@ def weighted_average( temps ,index ):
         return round(weighted_average, 2)
     else:
         return -1
+
 
