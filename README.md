@@ -1,5 +1,5 @@
 # Thermal Pi Project
-The Thermal Pi project repository contains the code, schematics and 3D model documents to create a contactless, human body temperature screening device with a Raspberry Pi. This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
+The Thermal Pi project repository contains the code and schematics to create a contactless, human body temperature screening device with a Raspberry Pi. This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
 
 
 ![image](https://user-images.githubusercontent.com/99409502/183681615-91228a1e-6a97-4f3c-8c00-d679fa8c1665.png)
@@ -55,17 +55,15 @@ See [Full_Schematic](https://github.com/peterWSU109/ThermalPi/blob/0f1ca807e247e
 ## Build Notes
 
 ### Code for misc. hardware components
-The current build has code for various hardware components toggled via GPIO pins. It requires two scripts to run at Pi start up.
-This code may be unnecessary depending on how you would like to implement the project.
+The main_loop_GPIO.py file has code for an integrated hardware system. It's effected GPIO pins are explained below. The main_loop.py and main_functions.py have had any GPIO references removed.
 1) GPIO 11 and GPIO 4 toggle a relay to allow for single push button on/off 
 2) GPIO 23 toggles a relay that activates the screen backlight (The team directly soldered a relay to short circuit a backlight switch)
 3) GPIO 24 toggles a relay that activates a case fan
 
 ### Known Issues
 
-1) Code - The initial ambient temperature calibration can sometimes error because a 'false' positive face is present
-2) hardware - The 3D printed enclosure design can fit the hardware inside, but DOES NOT have effective mounts - We used some hot glue and drill to make it work :)
-3) Code - The code that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
+1) The initial ambient temperature calibration can sometimes error because a 'false' positive face is present
+3) The function that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
 
 ## Basic Software and Component Installation
 ### Setting up the thermal camera
