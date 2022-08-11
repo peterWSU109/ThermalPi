@@ -224,7 +224,7 @@ def refresh_thermalCamera():
                 #print(rel_temp, ambient)
                 
         #This statement calculates the inital startup ambient temp
-        elif frame and face_is_present == False and ambient == 0 and frame_count > 30 and debug_prompt == False:
+        elif frame and person_is_present == False and ambient == 0 and frame_count > 30 and debug_prompt == False:
             mean = np.average(frame)
             std_dev = np.std(frame)
             for i in range(768):
