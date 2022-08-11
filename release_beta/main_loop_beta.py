@@ -1,4 +1,4 @@
-import main_functions_beta as mf
+import main_functions as mf
 import threading
 import time
 import cv2
