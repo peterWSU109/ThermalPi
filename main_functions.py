@@ -323,7 +323,7 @@ def cel_to_far( t ):
    
 
 #calculates the Definitive temperature of a person
-def def_temp_calc( temps, std_dev, ave_temp, raw_temp):
+def def_temp_calc( temps, ave_temp, raw_temp):
     correction = 0
     def_temp = 0
     temp = []
@@ -348,7 +348,6 @@ def def_temp_calc( temps, std_dev, ave_temp, raw_temp):
 
     def_temp = np.average(temp)
     if def_temp < 35.0 and raw_temp == False:
-        print(def_temp)
         if temps[-1][0] < 100:
             def_temp = 3
         else:
@@ -508,9 +507,9 @@ def create_thermal_image( r ):
         for w in range(32):
             x_end = lx_offset + tc_horz_scale
             t = frame[h * 32 + w]
-            if t < rel_temp:
+            if t < 30.5:
                 r[ly_offset: y_end, lx_offset: x_end] = (0)
-            elif rel_temp <= t < 31:
+            elif 30.5 <= t < 31:
                  r[ly_offset: y_end, lx_offset: x_end] = (255)
             elif 31 <= t < 32:
                  r[ly_offset: y_end, lx_offset: x_end] = (255)
@@ -539,5 +538,6 @@ def weighted_average( temps ,index ):
         return round(weighted_average, 2)
     else:
         return -1
+
 
 
