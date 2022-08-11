@@ -63,7 +63,7 @@ The main_loop_GPIO.py file has code for an integrated hardware system. It's effe
 ### Known Issues
 
 1) The initial ambient temperature calibration can sometimes error because a 'false' positive face is present
-3) The function that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
+2) The function that adjusts for mismatched FOVs of the thermal camera and conventional camera is very basic. Could be written much better to adjust for lens distortion
 
 ## Basic Software and Component Installation
 ### Setting up the thermal camera
@@ -131,9 +131,5 @@ Type the following into Terminal to execute the program:
 
 Finally execute main_loop.py. The program will default into full screen mode and can be exited by pressing 'Q' on the keyboard.
 Upon program starting, be sure to stay out of the way of the cameras as it is measuring the ambient temperture of the room. Have Fun!
-
-##Ackowledgments
-
-1)
 
 
