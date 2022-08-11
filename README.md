@@ -86,7 +86,7 @@ These guides will discuss both how to physically connect the thermal camera to P
  7) sudo apt install python3 matplot-lib
 
 #### Turn on the I2C interface and set the Baud rate
-1) Go to terminal and type "sudo nano config.txt"
+1) Go to terminal and type "sudo nano /boot/config.txt"
 2) On the line directly below "Uncomment some or all of these to enable the optional hardware interfaces" type the following:
       "dtparam=i2c_arm=on,i2c_arm_baudrate=400000"
 3) Save changes and exit the file
