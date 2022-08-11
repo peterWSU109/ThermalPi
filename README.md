@@ -111,15 +111,23 @@ In the above configuration the software FOV settings should be aproximately corr
 
 1) sudo apt-get install python-opencv
 2) sudo apt-get install python-pandas
-3) pip install -U scikit-learn
+3) sudo pip install -U scikit-learn
 
-### Necessary files and execution
+### Execution
 
 Put these files and folders in the same directory
 1) main_loop.py
 2) main_functions.py
 3) haarcascades
 4) assets
+
+Then run main_loop.py
+
+.. Or .. clone the repository (The repository was used to hold some large image files and a video, it's about ~160 megabytes)
+Type the following into Terminal to execute the program:
+
+1) git clone https://github.com/peterWSU109/ThermalPi
+2) sudo ThermalPi python3 main_loop.py
 
 Finally execute main_loop.py. The program will default into full screen mode and can be exited by pressing 'Q' on the keyboard.
 Upon program starting, be sure to stay out of the way of the cameras as it is measuring the ambient temperture of the room. Have Fun!
