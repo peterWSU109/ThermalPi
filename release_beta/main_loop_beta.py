@@ -51,7 +51,7 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
 #How many frames for the background to cycle
 background_cycle_frame = 100
-file_list = os.listdir("/home/pi/Desktop/assets")
+file_list = os.listdir(os.getcwd() +"/assets")
 file_list.sort()
 
 #background array and string path
