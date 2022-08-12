@@ -127,7 +127,7 @@ Then run main_loop.py
 Type the following into Terminal to execute the program:
 
 1) git clone https://github.com/peterWSU109/ThermalPi
-2) sudo ThermalPi python3 main_loop.py
+2) sudo python3 ThermalPi/main_loop.py
 
 Finally execute main_loop.py. The program will default into full screen mode and can be exited by pressing 'Q' on the keyboard.
 Upon program starting, be sure to stay out of the way of the cameras as it is measuring the ambient temperture of the room. Have Fun!
