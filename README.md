@@ -19,7 +19,7 @@ See video for basic demonstration [Video_demonstration](https://youtu.be/Jvymuu6
 3) Complete screening in less than 1 seconds (May take longer from > 4 feet away)
 4) Create friendly UI for the end user
 5)  Measures multiple users at once 
-6) Can Run 5 to 8 hours depending on usage via a 10000 mah 5v lion battery
+6) Can Run 5 to 8 hours depending on usage
 7) Accuracy within +/- 0.5 degree Celcius (Possibly, see below)
 
 ### Notes on Accuracy
