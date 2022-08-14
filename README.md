@@ -149,7 +149,7 @@ Upon program starting, be sure to stay out of the way of the cameras as it is me
 3) The article 'Adafruit MLX90640 IR Thermal camera by Kattni Rembor. This was critical in getting the camera up and running quickly.
 
 4) The sci-kit learn community for thier easy to use library of linear regression techinques. The public git has over 2400 contributors.
-[sci-kit learn git] (https://github.com/scikit-learn/scikit-learn.git)
+[sci-kit learn git](https://github.com/scikit-learn/scikit-learn.git)
 
 5) The opencv community for making basic facial detection accessible to even novice programmers like myself and thier excellent documentation on all thier graphic manipulation functions.
 [opencv git](https://github.com/opencv/opencv-python.git)
