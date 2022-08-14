@@ -142,7 +142,7 @@ Upon program starting, be sure to stay out of the way of the cameras as it is me
 ### Acknowledgments
 
 1) The entire team who developed the MLX90640 driver for the raspberry pi. This project would have been impossible without them.
-[Adafruit_CircuitPython_MLX90640](https://github.com/adafruit/Adafruit_CircuitPython_MLX90640.git) and especially 
+[Adafruit_CircuitPython_MLX90640](https://github.com/adafruit/Adafruit_CircuitPython_MLX90640.git)
 
 2) ladyada and evaherrada for all thier contributions to the MLX90640 driver and thier simple_test.py program. It was very useful when understanding the basics of the API.
 
