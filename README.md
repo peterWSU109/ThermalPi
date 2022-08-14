@@ -1,6 +1,6 @@
 # Thermal Pi Project
 The Thermal Pi project repository contains the code and schematics to create a contactless, human body temperature screening device with a Raspberry Pi. 
-It uses the MLX90640 thermal camera and an inexpensive ( $10 in our case) Rasberry Pi  optical camera to calculate body temperatures.
+It uses the MLX90640 thermal camera and an inexpensive ( $10 in our case) Rasberry Pi  optical camera to find faces and calculate core body temperatures.
 
 This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
 
