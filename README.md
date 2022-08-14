@@ -36,9 +36,11 @@ The basic design involves involves four components the Raspberry Pi 4 B, the MLX
 4) The results of the calculation are communicated to end user via a friendly UI
 
 **Programmer Debugg Mode**
+
 ![image](https://user-images.githubusercontent.com/99409502/183878792-c5ec24fb-e5d1-4133-99b2-cbb46d1a874b.png)
 
 **End User Screen**
+
 ![image](https://user-images.githubusercontent.com/99409502/183878865-9a9539d5-b326-4009-9476-f518b094951c.png)
 
 
