@@ -1,6 +1,6 @@
 # Thermal Pi Project
 The Thermal Pi project repository contains the code and schematics to create a contactless, human body temperature screening device with a Raspberry Pi. 
-It uses the MLX90640 thermal camera and an inexpensive ( $10 in our case) Rasberry Pi  optical camera to find faces and calculate core body temperatures.
+It uses the MLX90640 thermal camera ($75) and an inexpensive ( $10 in our case) Rasberry Pi  optical camera to find faces and calculate core body temperatures.
 
 This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
 
@@ -14,7 +14,7 @@ See video for basic demonstration [Video_demonstration](https://youtu.be/Jvymuu6
 
 ## Specifications
 
-1) Wieghs 1 lb. 15 ounces with 10000 mah 5v battery pack
+1) Weighs 1 lb. 15 ounces with a 10000 mah 5v battery pack attached
 2) Screen people at a distance 1 to 6 feet 
 3) Complete screening in less than 1 seconds (May take longer from > 4 feet away)
 4) Friendly animated UI for the end user
@@ -35,7 +35,10 @@ The basic design involves involves four components the Raspberry Pi 4 B, the MLX
 3) The relevant 'facial' thermal camera pixels (which are just celcius temperatures) are used to calculate a core temperature
 4) The results of the calculation are communicated to end user via a friendly UI
 
+**Programmer Debugg Mode**
 ![image](https://user-images.githubusercontent.com/99409502/183878792-c5ec24fb-e5d1-4133-99b2-cbb46d1a874b.png)
+
+**End User Screen**
 ![image](https://user-images.githubusercontent.com/99409502/183878865-9a9539d5-b326-4009-9476-f518b094951c.png)
 
 
@@ -146,10 +149,10 @@ Upon program starting, be sure to stay out of the way of the cameras as it is me
 
 2) ladyada and evaherrada for all thier contributions to the MLX90640 driver and thier simple_test.py program. It was very useful when understanding the basics of the API.
 
-3) The article 'Adafruit MLX90640 IR Thermal camera by Kattni Rembor. This was critical in getting the camera up and running quickly.
+3) The article 'Adafruit MLX90640 IR Thermal camera' by Kattni Rembor. This was critical in getting the camera up and running quickly.
 
 4) The sci-kit learn community for thier easy to use library of linear regression techinques. The public git has over 2400 contributors.
 [sci-kit learn git](https://github.com/scikit-learn/scikit-learn.git)
 
-5) The opencv community for making basic facial detection accessible to even novice programmers like myself and thier excellent documentation on all thier graphic manipulation functions.
+5) The opencv community for making basic facial detection accessible to even novice programmers like myself and their excellent documentation on all their graphic manipulation functions.
 [opencv git](https://github.com/opencv/opencv-python.git)
