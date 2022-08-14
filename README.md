@@ -14,11 +14,11 @@ See video for basic demonstration [Video_demonstration](https://youtu.be/Jvymuu6
 
 ## Specifications
 
-1) wieghs 1 lb. 15 ounces with 10000 mah 5v battery pack
+1) Wieghs 1 lb. 15 ounces with 10000 mah 5v battery pack
 2) Screen people at a distance 1 to 6 feet 
 3) Complete screening in less than 1 seconds (May take longer from > 4 feet away)
-4) Create friendly UI for the end user
-5)  Measures multiple users at once 
+4) Friendly animated UI for the end user
+5) Measures multiple users at once 
 6) Can Run 5 to 8 hours depending on usage
 7) Accuracy within +/- 0.5 degree Celcius (Possibly, see below)
 
