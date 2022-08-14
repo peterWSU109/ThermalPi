@@ -1,5 +1,8 @@
 # Thermal Pi Project
-The Thermal Pi project repository contains the code and schematics to create a contactless, human body temperature screening device with a Raspberry Pi. This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
+The Thermal Pi project repository contains the code and schematics to create a contactless, human body temperature screening device with a Raspberry Pi. 
+It uses the MLX90640 thermal camera and a inexpensive ( $10 in our case) Rasberry Pi  optical camera to calculate body temperatures.
+
+This prototype was created as a Senior design project at Wichita State University in Spring 2022 by Peter M., Lexi W., Shaima H., and Adrian S.
 
 
 ![image](https://user-images.githubusercontent.com/99409502/183681615-91228a1e-6a97-4f3c-8c00-d679fa8c1665.png)
@@ -9,15 +12,15 @@ The Thermal Pi project repository contains the code and schematics to create a c
 See video for basic demonstration [Video_demonstration](https://youtu.be/Jvymuu6-stE)
 
 
-## Design Goals/Specifications
+## Specifications
 
-1) Small (Able to be held with one hand), and lightweight (Met!)
-2) Screen people at a distance 3 to 6 feet (Met!)
-3) Complete screening in less than 3 seconds (Met!)
-4) Create friendly UI for the end user (Met!)
-5) Stretch Goal - Measure multiple users at once (Met!)
-6) Stretch Goal - Run for a full work day on battery (Can Run 5 to 8 hours depending on usage)
-7) Stretch Goal - Accuracy within +/- 0.5 degree Celcius (Possibly, see below)
+1) wieghs 1 lb. 15 ounces with 10000 mah 5v battery pack
+2) Screen people at a distance 1 to 6 feet 
+3) Complete screening in less than 1 seconds (May take longer from > 4 feet away)
+4) Create friendly UI for the end user
+5)  Measures multiple users at once 
+6) Can Run 5 to 8 hours depending on usage via a 10000 mah 5v lion battery
+7) Accuracy within +/- 0.5 degree Celcius (Possibly, see below)
 
 ### Notes on Accuracy
 The MLX90640 thermal camera is not accurate enough for this purpose by itself. A methodology using facial detection, facial tracking, facial temperature averaging, and a multiple linear regression model was utilized. As such, the accuracy of the model is only as good as the data given to model. In our limited testing the device could indeed get +/- 0.5 celcius accuracy greater than 95% of the time. **However, Our temperature samples were limited and may not be accurate across all enviroments and populations.**
@@ -41,24 +44,28 @@ The basic design involves involves four components the Raspberry Pi 4 B, the MLX
 ### Necessary Components
 
 1) Raspberry Pi 4B 2 gig variant (more memory doesn't hurt but 2 gigabytes will suffice)
-2) MLX90640 55 degree FOV
+2) MLX90640 Thermal Camera 55 degree FOV
 3) Arducam 5MP Camera for Raspberry Pi, 1080P HD OV5647 Camera Module V1 for Pi 4 (Any Pi camera will likely work)
 4) waveshare 5 inch hdmi lcd (b) 800×480 (We wouldn't suggest going less than 5 inches as the animations become very small)
 
 ### Misc. Components
-These Components may not be strictly necessary depending on how one would like to build this device.
+These Components may not be strictly necessary depending on how one would like to build this device. We used them to make our stand alone device.
+
 1) 3-way toggle switch for battery-off-wall operation
 2) 2 Reed relays. Operating voltage ~3volts and can switch at least 500ma at 5v (used for fan and backlight, ordered off of digi-key)
 3) Relay with Normally Open and Normally Closed Terminals and Trigger (Trigger not strictly necessary but was incorporated in our design)
 See [Full_Schematic](https://github.com/peterWSU109/ThermalPi/blob/0f1ca807e247e0bf635c6557d95f849d3ba87a80/Senior%20Design%20Schematic%20BOTH.png) and [pi_power_button explanation](https://github.com/peterWSU109/ThermalPi/blob/59b25400a38b9f8c12cb0b1cb150e04c7f70e910/Pi_Power_Button_Explanation.jpg)
+4) 5v 10000 mah lithium ion battery
 
 ## Build Notes
 
 ### Code for misc. hardware components
-The main_loop_GPIO.py file has code for an integrated hardware system. It's effected GPIO pins are explained below. The main_loop.py and main_functions.py have had any GPIO references removed.
+The main_loop_GPIO.py file has code for an integrated hardware system. It's effected GPIO pins are explained below. 
 1) GPIO 11 and GPIO 4 toggle a relay to allow for single push button on/off 
 2) GPIO 23 toggles a relay that activates the screen backlight (The team directly soldered a relay to short circuit a backlight switch)
 3) GPIO 24 toggles a relay that activates a case fan
+
+The main_loop.py and main_functions.py our working and have had any GPIO references removed.
 
 ### Known Issues
 
@@ -132,4 +139,17 @@ Type the following into Terminal to execute the program:
 Finally execute main_loop.py. The program will default into full screen mode and can be exited by pressing 'Q' on the keyboard.
 Upon program starting, be sure to stay out of the way of the cameras as it is measuring the ambient temperture of the room. Have Fun!
 
+###Acknowledgments
 
+1) The entire team who developed the MLX90640 driver for the raspberry pi. This project would have been impossible without them.
+[Adafruit_CircuitPython_MLX90640](https://github.com/adafruit/Adafruit_CircuitPython_MLX90640.git) and especially 
+
+2) ladyada and evaherrada for all thier contributions to the MLX90640 driver and thier simple_test.py program. It was very useful when understanding the basics of the API.
+
+3)The article 'Adafruit MLX90640 IR Thermal camera by Kattni Rembor. This was critical in getting the camera up and running quickly.
+
+4) The sci-kit learn community for thier easy to use library of linear regression techinques. The public git has over 2400 contributors.
+[sci-kit learn git] (https://github.com/scikit-learn/scikit-learn.git)
+
+5) The opencv community for making basic facial detection accessible to even novice programmers like myself and thier excellent documentation on all thier graphic manipulation functions.
+[opencv git](https://github.com/opencv/opencv-python.git)
