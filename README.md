@@ -139,14 +139,14 @@ Type the following into Terminal to execute the program:
 Finally execute main_loop.py. The program will default into full screen mode and can be exited by pressing 'Q' on the keyboard.
 Upon program starting, be sure to stay out of the way of the cameras as it is measuring the ambient temperture of the room. Have Fun!
 
-###Acknowledgments
+### Acknowledgments
 
 1) The entire team who developed the MLX90640 driver for the raspberry pi. This project would have been impossible without them.
 [Adafruit_CircuitPython_MLX90640](https://github.com/adafruit/Adafruit_CircuitPython_MLX90640.git) and especially 
 
 2) ladyada and evaherrada for all thier contributions to the MLX90640 driver and thier simple_test.py program. It was very useful when understanding the basics of the API.
 
-3)The article 'Adafruit MLX90640 IR Thermal camera by Kattni Rembor. This was critical in getting the camera up and running quickly.
+3) The article 'Adafruit MLX90640 IR Thermal camera by Kattni Rembor. This was critical in getting the camera up and running quickly.
 
 4) The sci-kit learn community for thier easy to use library of linear regression techinques. The public git has over 2400 contributors.
 [sci-kit learn git] (https://github.com/scikit-learn/scikit-learn.git)
